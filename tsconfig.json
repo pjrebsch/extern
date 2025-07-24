@@ -1,0 +1,26 @@
+{
+  "include": ["./src/**/*"],
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "allowJs": false,
+
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "incremental": false,
+    "tsBuildInfoFile": null,
+    "listEmittedFiles": true,
+    "isolatedModules": true,
+
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true
+  }
+}

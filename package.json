@@ -1,0 +1,58 @@
+{
+  "name": "@ghostry/extern",
+  "version": "0.0.0",
+  "license": "MIT",
+  "description": "Dependency injection made seamless.",
+  "keywords": [
+    "dependency injection",
+    "mock",
+    "spy",
+    "test",
+    "typescript",
+    "extern"
+  ],
+  "author": {
+    "name": "Patrick Rebsch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pjrebsch/extern"
+  },
+  "homepage": "https://github.com/pjrebsch/extern",
+  "bugs": "https://github.com/pjrebsch/extern/issues",
+  "type": "module",
+  "types": "./dist/types/index.d.ts",
+  "module": "./dist/esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build:reset": "rm -rf ./dist",
+    "build:compile": "rslib build --config ./rslib.config.ts",
+    "build:clean": "find ./dist -type f -name '*.tsbuildinfo' -delete",
+    "build": "bun run build:reset && bun run build:compile && bun run build:clean",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@rslib/core": "^0.12.4",
+    "@types/bun": "^1.2.21",
+    "jsr": "^0.13.5",
+    "npm": "^11.5.2",
+    "prettier": "^3.6.2",
+    "sury": "^11.0.0-alpha.3",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
