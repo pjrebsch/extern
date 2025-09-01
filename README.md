@@ -1,8 +1,9 @@
 # extern
 
-This library provides the most seamless possible approach to dependency injection for test suites.
+This library provides the most seamless possible approach to dependency injection for test suites, with an additional optional benefit of runtime validation of externally-sourced data.
 
-The approach for doing this has an additional (optional) benefit of runtime validation of externally-sourced data.
+[![jsr.io score](https://jsr.io/badges/@ghostry/extern/score)](https://jsr.io/@ghostry/extern/score)
+[![dependency count](https://flat.badgen.net/bundlephobia/dependency-count/@ghostry/extern?color=blue)](https://bundlephobia.com/package/@ghostry/extern)
 
 ## Example
 

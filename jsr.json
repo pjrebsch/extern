@@ -1,1 +1,1 @@
-{ "name": "@ghostry/extern", "version": "0.0.1", "exports": "./src/index.ts" }
+{ "name": "@ghostry/extern", "version": "0.0.2", "exports": "./src/index.ts" }

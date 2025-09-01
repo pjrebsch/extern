@@ -1,6 +1,6 @@
 {
   "name": "@ghostry/extern",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "description": "Dependency injection made seamless.",
   "keywords": [
@@ -8,8 +8,7 @@
     "mock",
     "spy",
     "test",
-    "typescript",
-    "extern"
+    "typescript"
   ],
   "author": {
     "name": "Patrick Rebsch"
