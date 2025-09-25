@@ -1,5 +1,5 @@
 import * as S from "sury";
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { initialize } from "../src";
 import { InvalidDataTypeError } from "../src/Error";
 
@@ -39,6 +39,18 @@ describe("`extern.validated`", async () => {
       });
     });
 
+    describe("returning an object type with extra properties", () => {
+      it("returns the schema type in a Promise", () => {
+        const schema = S.schema({});
+
+        const result = extern.validated.by(schema).will(() => ({ abc: "xyz" }));
+
+        expectTypeOf<Promise<S.Input<typeof schema>>>().toEqualTypeOf<
+          typeof result
+        >();
+      });
+    });
+
     describe("`named()`", () => {
       const subject = extern.validated.by(schema).named("abc");
 
@@ -68,6 +80,21 @@ describe("`extern.validated`", async () => {
           const error = new InvalidDataTypeError(schema, issues ?? []);
 
           await expect(result).rejects.toThrowError(error);
+        });
+      });
+
+      describe("returning an object type with extra properties", () => {
+        it("returns the schema type in a Promise", () => {
+          const schema = S.schema({});
+
+          const result = extern.validated
+            .by(schema)
+            .named("abc")
+            .will(() => ({ abc: "xyz" }));
+
+          expectTypeOf<Promise<S.Input<typeof schema>>>().toEqualTypeOf<
+            typeof result
+          >();
         });
       });
 
@@ -102,6 +129,22 @@ describe("`extern.validated`", async () => {
             await expect(result).rejects.toThrowError(error);
           });
         });
+
+        describe("returning an object type with extra properties", () => {
+          it("returns the schema type in a Promise", () => {
+            const schema = S.schema({});
+
+            const result = extern.validated
+              .by(schema)
+              .named("abc")
+              .given("...")
+              .will(() => ({ abc: "xyz" }));
+
+            expectTypeOf<Promise<S.Input<typeof schema>>>().toEqualTypeOf<
+              typeof result
+            >();
+          });
+        });
       });
     });
 
@@ -119,6 +162,36 @@ describe("`extern.validated`", async () => {
           const result = subject.will(async (given) => 123 + given);
 
           await expect(result).resolves.toBe(1110);
+        });
+
+        describe("returning an object type with extra properties", () => {
+          it("returns the schema type in a Promise", () => {
+            const schema = S.schema({});
+
+            const result = extern.validated
+              .by(schema)
+              .given("...")
+              .will(async () => ({ abc: "xyz" }));
+
+            expectTypeOf<Promise<S.Input<typeof schema>>>().toEqualTypeOf<
+              typeof result
+            >();
+          });
+        });
+      });
+
+      describe("returning an object type with extra properties", () => {
+        it("returns the schema type in a Promise", () => {
+          const schema = S.schema({});
+
+          const result = extern.validated
+            .by(schema)
+            .given("...")
+            .will(() => ({ abc: "xyz" }));
+
+          expectTypeOf<Promise<S.Input<typeof schema>>>().toEqualTypeOf<
+            typeof result
+          >();
         });
       });
     });

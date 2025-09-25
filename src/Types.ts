@@ -1,4 +1,7 @@
-export type Promisable<T> = T | Promise<T>;
+export type Promisable<$T> = $T | Promise<$T>;
+
+export type Promised<$T, $Promisable extends Promisable<$T>> =
+  $Promisable extends Promise<$T> ? Promise<$T> : $T;
 
 export type $$Name = string;
 
