@@ -45,10 +45,10 @@
     "dist"
   ],
   "devDependencies": {
-    "@rslib/core": "^0.12.4",
-    "@types/bun": "^1.2.21",
+    "@rslib/core": "^0.14.0",
+    "@types/bun": "^1.2.22",
     "jsr": "^0.13.5",
-    "npm": "^11.5.2",
+    "npm": "^11.6.1",
     "prettier": "^3.6.2",
     "sury": "^11.0.0-alpha.3",
     "typescript": "^5.9.2",
