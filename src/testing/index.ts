@@ -3,7 +3,9 @@ import { UnusedMocksError } from "../Error";
 import { mocking, type $$Mocker, type $$Spy, type $$SpyMap } from "../Mocking";
 import type { Promisable } from "../Types";
 
-export type $$Testing = (fn: (mocker: $$Mocker) => void) => Promise<void>;
+export type $$Testing = (
+  fn: (mocker: $$Mocker) => Promisable<void>,
+) => Promise<void>;
 
 export const $$testing =
   (config: $$Config): $$Testing =>
