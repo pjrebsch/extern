@@ -11,7 +11,7 @@ export default defineConfig({
       output: { distPath: { root: "./dist/esm" } },
     },
   ],
-  source: { tsconfigPath: "./tsconfig.json" },
+  source: { tsconfigPath: "./tsconfig.build.json" },
   output: {
     target: "node",
     minify: {
