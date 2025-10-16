@@ -39,7 +39,7 @@
     "build:clean": "find ./dist -type f -name '*.tsbuildinfo' -delete",
     "build": "bun run build:reset && bun run build:compile && bun run build:clean",
     "check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "bun run check && vitest run"
   },
   "files": [
     "dist"
