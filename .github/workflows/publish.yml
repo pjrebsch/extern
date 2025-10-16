@@ -101,9 +101,13 @@ jobs:
 
   ##
   # https://docs.npmjs.com/generating-provenance-statements#example-github-actions-workflow
+  # https://docs.npmjs.com/trusted-publishers#step-2-configure-your-cicd-workflow
   #
   publish-npm:
     name: Publish to NPM
+    permissions:
+      contents: read
+      id-token: write
     needs: [pack]
     env:
       filename: ${{ inputs.version }}.tgz
@@ -140,8 +144,6 @@ jobs:
           ${{ github.workspace }}/dist/${{ env.filename }}
           --tag ${{ env.is-prerelease == 'true' && 'experimental' || 'latest' }}
           --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
   publish-jsr:
     name: Publish to JSR
