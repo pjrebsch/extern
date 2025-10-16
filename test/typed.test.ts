@@ -21,6 +21,30 @@ describe("`extern.typed`", async () => {
 
         await expect(result).resolves.toBe(123);
       });
+
+      describe("returning a nullable empty type", () => {
+        it("returns the empty type", async () => {
+          type NullableType = {} | null;
+          const schema = S.schema({});
+          const value = null as NullableType;
+
+          const result = extern.typed.by(schema).will(async () => value);
+
+          expectTypeOf<typeof result>().toEqualTypeOf<{}>();
+        });
+      });
+
+      describe("returning a nullable non-empty type", () => {
+        it("returns the empty type", async () => {
+          type NullableType = { abc: string } | null;
+          const schema = S.schema({});
+          const value = null as NullableType;
+
+          const result = extern.typed.by(schema).will(async () => value);
+
+          expectTypeOf<typeof result>().toEqualTypeOf<{}>();
+        });
+      });
     });
 
     describe("returning incorrect type", () => {
@@ -159,9 +183,7 @@ describe("`extern.typed`", async () => {
               .given("...")
               .will(async () => ({ abc: "xyz" }));
 
-            expectTypeOf<Promise<S.Input<typeof schema>>>().toEqualTypeOf<
-              typeof result
-            >();
+            expectTypeOf<typeof result>().toEqualTypeOf<Promise<{}>>();
           });
         });
       });

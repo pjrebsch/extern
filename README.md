@@ -1,7 +1,8 @@
 # extern
 
-This library provides the most seamless possible approach to dependency injection for test suites, with an additional optional benefit of runtime validation of externally-sourced data.
+This library provides the most seamless possible approach to typed dependency injection for test suites, with an optional feature of runtime validation of externally-sourced data.
 
+[![npm page](https://img.shields.io/badge/%40ghostry%2Fextern-CB3837?logo=npm&logoColor=%23CB3837&labelColor=%23FFF)](https://www.npmjs.com/package/@ghostry/extern)
 [![jsr.io score](https://jsr.io/badges/@ghostry/extern/score)](https://jsr.io/@ghostry/extern/score)
 [![dependency count](https://flat.badgen.net/bundlephobia/dependency-count/@ghostry/extern?color=blue)](https://bundlephobia.com/package/@ghostry/extern)
 
@@ -136,7 +137,7 @@ test("example test", async () => {
 
 This library was born from a philosophy of testing an application system in isolation, in contrast to testing it in the live context of other systems. In other words: "unit testing" individual systems of an application as opposed to "integration testing" the collection of them.
 
-The conventional approach to automated testing of an application is to construct a testing environment where all of the relevant interdepent systems are brought online and configured to use each other.
+The conventional approach to automated testing of an application is to construct a testing environment where all of the relevant interdependent systems are brought online and configured to use each other.
 
 As a result, test suites can often suffer in performance because that approach does not scale well as the test suite expands. With decent test coverage of a moderately complex application, there will be a lot of cross-system communication and a lot of repeated testing of the same code paths. Both of these can significantly slow the suite as a whole.
 
@@ -167,6 +168,14 @@ Determines the schema used for the extern block.
 The schema must support [Standard Schema v1](https://standardschema.dev/), but there are no other requirements. You can use multiple different schema libraries if you wish.
 
 The exact same schema object should be available to both source code and tests since there is no standardized way of determining equality between different schema objects that represent the same schema structure.
+
+> [!CAUTION]
+>
+> Be careful with an empty object schema, especially with an async block function!
+>
+> A Promise itself satisfies the empty interface regardless of what it may wrap which can cause type confusion with the resulting value.
+>
+> See https://typescript-eslint.io/rules/no-empty-object-type
 
 ### `named`
 

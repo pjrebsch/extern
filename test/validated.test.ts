@@ -22,6 +22,32 @@ describe("`extern.validated`", async () => {
 
         await expect(result).resolves.toBe(123);
       });
+
+      describe("returning a nullable empty type", () => {
+        it("does not pass validation", async () => {
+          type NullableType = {} | null;
+          const schema = S.schema({});
+          const value = null as NullableType;
+
+          const result = extern.validated.by(schema).will(async () => value);
+
+          expectTypeOf<typeof result>().toEqualTypeOf<Promise<{}>>();
+          await expect(result).rejects.toThrowError(InvalidDataTypeError);
+        });
+      });
+
+      describe("returning a nullable non-empty type", () => {
+        it("does not pass validation", async () => {
+          type NullableType = { abc: string } | null;
+          const schema = S.schema({});
+          const value = null as NullableType;
+
+          const result = extern.validated.by(schema).will(async () => value);
+
+          expectTypeOf<typeof result>().toEqualTypeOf<Promise<{}>>();
+          await expect(result).rejects.toThrowError(InvalidDataTypeError);
+        });
+      });
     });
 
     describe("returning incorrect type", () => {

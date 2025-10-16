@@ -1,6 +1,6 @@
 import * as S from "sury";
 import { describe, expect, it } from "vitest";
-import { initialize, type Extern } from "../../src";
+import { initialize, type Initialized } from "../../src";
 import {
   IllegalConcurrencyTestingError,
   NotMockedError,
@@ -13,7 +13,7 @@ describe("`extern.testing`", async () => {
   const schema = S.number;
 
   describe("for `extern.validated`", async () => {
-    const example = (extern: Extern) => {
+    const example = (extern: Initialized) => {
       return extern.validated.by(schema).will(() => 123);
     };
 
@@ -103,7 +103,7 @@ describe("`extern.testing`", async () => {
     });
 
     describe("`extern.named()`", () => {
-      const example = (extern: Extern) => {
+      const example = (extern: Initialized) => {
         return extern.validated
           .by(schema)
           .named("abc")
@@ -129,7 +129,7 @@ describe("`extern.testing`", async () => {
       });
 
       describe("multiple mocks for the same schema", () => {
-        const example = async (extern: Extern) => {
+        const example = async (extern: Initialized) => {
           const x = await extern.validated.by(schema).will(() => 10);
           const y = await extern.validated
             .by(schema)
@@ -151,7 +151,7 @@ describe("`extern.testing`", async () => {
     });
 
     describe("a spy", () => {
-      const example = async (extern: Extern) => {
+      const example = async (extern: Initialized) => {
         const x = await extern.validated
           .by(schema)
           .given(10)
