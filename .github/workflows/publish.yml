@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -43,7 +43,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Download the build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: pkg
           path: dist
@@ -61,14 +61,14 @@ jobs:
         run: bun pm pack --filename ${{ steps.tarball-path.outputs.path }}
 
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.filename }}
           path: ${{ steps.tarball-path.outputs.path }}
           if-no-files-found: error
 
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest@v4
         with:
           subject-path: ${{ steps.tarball-path.outputs.path }}
 
@@ -80,17 +80,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.version }}.tgz
           path: ${{ github.workspace }}/dist
           merge-multiple: true
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: ${{ inputs.version }}
           tag_name: ${{ inputs.version }}
@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -125,7 +125,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.filename }}
           path: ${{ github.workspace }}/dist
@@ -136,8 +136,11 @@ jobs:
       # https://github.com/oven-sh/bun/issues/15601
       #
       - name: Install Node
-        uses: actions/setup-node@v4
-        with: { node-version: 24, registry-url: https://registry.npmjs.org }
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
       - name: Publish
         run: >
           bunx --no-install npm publish
@@ -153,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
