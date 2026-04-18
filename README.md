@@ -270,3 +270,17 @@ mock(schema).named("abc").with(789);
 ```
 
 Registering more than one mock with the same disambiguation for the same schema will immediately throw an error.
+
+### Skipping mocks
+
+In some tests, you may wish to run the original code instead of mocking it, but not defining a mock will throw an `UnusedMocksError`.
+
+You can achieve this by explicitly skipping that mock:
+
+```ts
+/** Disables the mocking requirement and runs the original code block. */
+mock(schema).skip();
+
+/** Disambiguation is also supported here. */
+mock(schema).named("abc").skip();
+```

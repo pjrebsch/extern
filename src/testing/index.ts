@@ -1,7 +1,7 @@
 import type { $$Config } from "../Config";
 import { UnusedMocksError } from "../Error";
 import { mocking, type $$Mocker, type $$Spy, type $$SpyMap } from "../Mocking";
-import type { Promisable } from "../Types";
+import { never, type Promisable } from "../Types";
 
 export type $$Testing = (
   fn: (mocker: $$Mocker) => Promisable<void>,
@@ -21,7 +21,18 @@ const disallowUnusedMocks = (spiesBySchema: $$SpyMap) => {
 
   spiesBySchema.forEach((spies) => {
     spies.forEach((spy) => {
-      if (spy.executions.length === 0) unused.push(spy);
+      switch (spy.kind) {
+        case "skipped": {
+          break;
+        }
+        case "mocked": {
+          if (spy.executions.length === 0) unused.push(spy);
+          break;
+        }
+        default: {
+          never(spy);
+        }
+      }
     });
   });
 

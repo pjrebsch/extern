@@ -28,5 +28,12 @@ export const $will = async <$Out, $In>(
 
   spy.executions.push({ ...params, mode: "validated" });
 
-  return spy.value as $Out;
+  switch (spy.kind) {
+    case "skipped": {
+      return fn();
+    }
+    case "mocked": {
+      return spy.value as $Out;
+    }
+  }
 };

@@ -39,6 +39,16 @@ describe("`extern.testing`", async () => {
       ).rejects.toThrowError(UnusedMocksError);
     });
 
+    describe("`skip()`", () => {
+      it("allows the original function to run", async () => {
+        await extern.testing(async (mock) => {
+          mock(schema).skip();
+
+          expect(await example(extern)).toBe(123);
+        });
+      });
+    });
+
     describe("after the `testing()` block", () => {
       it("does not affect the original code path", async () => {
         await extern.testing(async (mock) => {
@@ -129,6 +139,7 @@ describe("`extern.testing`", async () => {
       describe("multiple mocks for the same schema", () => {
         const example = async (extern: Initialized) => {
           const x = await extern.validated.by(schema).will(() => 10);
+
           const y = await extern.validated
             .by(schema)
             .named("abc")
@@ -143,6 +154,27 @@ describe("`extern.testing`", async () => {
             mock(schema).with(27);
 
             expect(await example(extern)).toBe(3);
+          });
+        });
+
+        describe("skipping an exact mock", () => {
+          it("does not skip inexact mocks", async () => {
+            await extern.testing(async (mock) => {
+              mock(schema).named("abc").skip();
+              mock(schema).with(30);
+
+              expect(await example(extern)).toBe(15);
+            });
+          });
+        });
+
+        describe("skipping an inexact mock", () => {
+          it("skips all mocks", async () => {
+            await extern.testing(async (mock) => {
+              mock(schema).skip();
+
+              expect(await example(extern)).toBe(5);
+            });
           });
         });
       });
@@ -167,6 +199,7 @@ describe("`extern.testing`", async () => {
         await extern.testing(async (mock) => {
           const spy = mock(schema).with(123);
 
+          expect(spy.kind).toBe("mocked");
           expect(spy.schema).toBe(schema);
           expect(spy.value).toBe(123);
           expect(spy.specificity).toBe(0);
@@ -219,6 +252,31 @@ describe("`extern.testing`", async () => {
             ]);
             expect(spy2.executions).toMatchObject([
               { mode: "validated", given: 10 },
+            ]);
+          });
+        });
+      });
+
+      describe("of skipped mock", () => {
+        it("is of skipped kind", async () => {
+          await extern.testing(async (mock) => {
+            const spy = mock(schema).skip();
+
+            expect(spy.kind).toBe("skipped");
+
+            await example(extern);
+          });
+        });
+
+        it("tracks executions", async () => {
+          await extern.testing(async (mock) => {
+            const spy = mock(schema).skip();
+
+            await example(extern);
+
+            expect(spy.executions).toMatchObject([
+              { mode: "validated", given: 10 },
+              { mode: "validated", named: "abc" },
             ]);
           });
         });

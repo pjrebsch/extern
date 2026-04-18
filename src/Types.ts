@@ -13,3 +13,5 @@ export interface $$Disambiguation {
 }
 
 export type $$Params<$In> = $$Disambiguation & { given?: $In };
+
+export const never = (never: never): never => never;

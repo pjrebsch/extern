@@ -2,7 +2,7 @@ import type { $$Config } from "../Config";
 import { NotMockedError } from "../Error";
 import { approximately } from "../Mocking";
 import type { StandardSchemaV1 } from "../StandardSchema";
-import type { $$Params } from "../Types";
+import { type $$Params } from "../Types";
 
 export const $will = <$Out, $In>(
   config: $$Config,
@@ -23,5 +23,12 @@ export const $will = <$Out, $In>(
 
   spy.executions.push({ ...params, mode: "typed" });
 
-  return spy.value as $Out;
+  switch (spy.kind) {
+    case "skipped": {
+      return fn();
+    }
+    case "mocked": {
+      return spy.value as $Out;
+    }
+  }
 };
