@@ -6,6 +6,7 @@
     "moduleDetection": "force",
     "allowJs": false,
     "types": ["@types/bun"],
+    "rootDir": ".",
 
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
