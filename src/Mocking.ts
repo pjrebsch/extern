@@ -88,6 +88,19 @@ export const approximately =
     return true;
   };
 
+const callerStack = (ignore: Function, limit?: number) => {
+  const trace: { stack: NonNullable<Error["stack"]> } = { stack: "" };
+
+  const originalLimit = Error.stackTraceLimit;
+  Error.stackTraceLimit = limit ?? originalLimit;
+  Error.captureStackTrace(trace, ignore);
+  Error.stackTraceLimit = originalLimit;
+
+  const [_message, ...frames] = trace.stack.split("\n");
+
+  return frames.join("\n");
+};
+
 export const mocking = () => {
   const spies: $$SpyMap = new Map();
 
@@ -98,9 +111,6 @@ export const mocking = () => {
       disamb: $$Disambiguation,
       distinction: $Distinction,
     ): $$Spy.$$Base<$Out> & $Distinction => {
-      const trace: { stack: NonNullable<Error["stack"]> } = { stack: "" };
-      Error.captureStackTrace(trace);
-
       const exactlyMatches = exactly(disamb);
       const existing = spies.get(schema) ?? [];
 
@@ -114,7 +124,7 @@ export const mocking = () => {
         schema,
         specificity,
         executions: [],
-        stack: trace.stack,
+        stack: callerStack($use, 1),
         ...distinction,
       };
 
