@@ -77,7 +77,7 @@ export const example = () => {
 ```ts
 import { extern } from "./extern.ts";
 import { example, schema } from "./source.ts";
-import { test, expect } from "vitest";
+import { test, expect } from "bun:test";
 
 test("example test", async () => {
   /**

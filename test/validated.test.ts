@@ -1,5 +1,5 @@
+import { describe, expect, expectTypeOf, it } from "bun:test";
 import * as S from "sury";
-import { describe, expect, expectTypeOf, it } from "vitest";
 import { initialize } from "../src";
 import { InvalidDataTypeError } from "../src/Error";
 

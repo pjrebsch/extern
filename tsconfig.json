@@ -5,6 +5,7 @@
     "module": "ESNext",
     "moduleDetection": "force",
     "allowJs": false,
+    "types": ["@types/bun"],
 
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,

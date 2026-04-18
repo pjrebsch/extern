@@ -39,7 +39,7 @@
     "build:clean": "find ./dist -type f -name '*.tsbuildinfo' -delete",
     "build": "bun run build:reset && bun run build:compile && bun run build:clean",
     "check": "tsc --noEmit",
-    "test": "bun run check && vitest run"
+    "test": "bun run check && bun test"
   },
   "files": [
     "dist"
@@ -51,7 +51,6 @@
     "npm": "^11.12.1",
     "prettier": "^3.8.3",
     "sury": "^11.0.0-alpha.4",
-    "typescript": "^6.0.3",
-    "vitest": "^3.2.4"
+    "typescript": "^6.0.3"
   }
 }

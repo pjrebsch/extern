@@ -1,5 +1,5 @@
+import { describe, expect, expectTypeOf, it } from "bun:test";
 import * as S from "sury";
-import { describe, expect, expectTypeOf, it } from "vitest";
 import { initialize } from "../src";
 
 describe("`extern.typed`", async () => {
@@ -55,7 +55,10 @@ describe("`extern.typed`", async () => {
             "abc",
         );
 
-        expect(result).toBe("abc");
+        expect(result).toBe(
+          /* @ts-expect-error */
+          "abc",
+        );
       });
     });
 
@@ -94,7 +97,10 @@ describe("`extern.typed`", async () => {
               "abc",
           );
 
-          expect(result).toBe("abc");
+          expect(result).toBe(
+            /* @ts-expect-error */
+            "abc",
+          );
         });
       });
 
@@ -136,7 +142,10 @@ describe("`extern.typed`", async () => {
                 "abc",
             );
 
-            expect(result).toBe("abc");
+            expect(result).toBe(
+              /* @ts-expect-error */
+              "abc",
+            );
           });
         });
 

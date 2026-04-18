@@ -1,5 +1,5 @@
+import { describe, expect, it } from "bun:test";
 import * as S from "sury";
-import { describe, expect, it } from "vitest";
 import { initialize, type Initialized } from "../../src";
 import {
   IllegalConcurrencyTestingError,
@@ -27,18 +27,16 @@ describe("`extern.testing`", async () => {
 
     it("requires `extern` during execution to be mocked", async () => {
       await extern.testing(async () => {
-        await expect(() => example(extern)).rejects.toThrowError(
-          NotMockedError,
-        );
+        await expect(example(extern)).rejects.toThrowError(NotMockedError);
       });
     });
 
     it("requires all mocks to be used by the end of the block", async () => {
-      await expect(async () => {
-        await extern.testing((mock) => {
+      await expect(
+        extern.testing((mock) => {
           mock(schema).with(987);
-        });
-      }).rejects.toThrowError(UnusedMocksError);
+        }),
+      ).rejects.toThrowError(UnusedMocksError);
     });
 
     describe("after the `testing()` block", () => {
