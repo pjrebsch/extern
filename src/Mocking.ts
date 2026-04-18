@@ -11,6 +11,7 @@ export type $$Spy<$Out = unknown> = $$Disambiguation & {
   readonly value: $Out;
   readonly specificity: number;
   readonly executions: Array<$$Execution>;
+  readonly stack: string;
 };
 
 export type $$SpyMap = Map<StandardSchemaV1, Array<$$Spy>>;
@@ -67,6 +68,9 @@ export const mocking = () => {
     const $with =
       (disamb: $$Disambiguation) =>
       (value: $Out): $$Spy<$Out> => {
+        const trace: { stack: NonNullable<Error["stack"]> } = { stack: "" };
+        Error.captureStackTrace(trace);
+
         const exactlyMatches = exactly(disamb);
         const existing = spies.get(schema) ?? [];
 
@@ -75,7 +79,14 @@ export const mocking = () => {
          */
         const specificity = "named" in disamb ? 0b1 : 0b0;
 
-        const spy = { ...disamb, schema, value, specificity, executions: [] };
+        const spy = {
+          ...disamb,
+          schema,
+          value,
+          specificity,
+          executions: [],
+          stack: trace.stack,
+        };
 
         /**
          * This logic keeps the list of spies ordered from most-to-least

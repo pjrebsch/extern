@@ -87,10 +87,26 @@ export class UnusedMocksError extends ExternError {
     /**
      * The list of mocks that were found to not be used.
      */
-    public readonly unused: ReadonlyArray<$$Spy>,
+    unused: ReadonlyArray<$$Spy>,
   ) {
     super();
     this.name = "UnusedMocksError";
-    this.message = "The testing block defined mocks that did not get used.";
+
+    const traces = unused
+      .map((x, i) => {
+        /**
+         * The top stack frame is ignored since it refers to a frame within
+         * this package.  This correction is deferred until now to avoid
+         * processing the stack trace of mocks that were not unused.
+         */
+        const [_message, _ignoredFrame, ...frames] = x.stack.split("\n");
+        const stack = frames.join("\n");
+        return `${i + 1}:\n${stack}`;
+      })
+      .join("\n\n");
+
+    this.message =
+      "The testing block defined mocks that did not get used:"
+      + `\n\n${traces}`;
   }
 }
