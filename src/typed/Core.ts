@@ -7,7 +7,7 @@ import { type $$Params } from "../Types";
 export const $will = <$Out, $In>(
   config: $$Config,
   schema: StandardSchemaV1<unknown>,
-  params: $$Params<$In>,
+  params: $$Params.$$ForValue<$In>,
   fn: () => $Out,
 ): $Out => {
   const context = config.scope.current();
@@ -23,12 +23,12 @@ export const $will = <$Out, $In>(
 
   spy.executions.push({ ...params, mode: "typed" });
 
-  switch (spy.kind) {
-    case "skipped": {
+  switch (spy.strategy.kind) {
+    case "passthrough": {
       return fn();
     }
-    case "mocked": {
-      return spy.value as $Out;
+    case "substitute": {
+      return spy.strategy.value as $Out;
     }
   }
 };

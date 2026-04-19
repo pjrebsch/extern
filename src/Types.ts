@@ -5,12 +5,20 @@ export type Promised<$T, $Promisable extends Promisable<$T>> =
 
 export type $$Name = string;
 
-export type $$Mode = "typed" | "validated";
+export type $$Mode = "typed" | "validated" | "effect";
 
-export interface $$Disambiguation {
-  readonly named?: string;
+export namespace $$Disambiguation {
+  type $$Base = { readonly named: string };
+
+  export type $$ForValue = Partial<$$Base>;
+  export type $$ForEffect = Required<$$Base>;
 }
 
-export type $$Params<$In> = $$Disambiguation & { given?: $In };
+export namespace $$Params {
+  type $$Base<$In> = { readonly given?: $In };
+
+  export type $$ForValue<$In> = $$Base<$In> & $$Disambiguation.$$ForValue;
+  export type $$ForEffect<$In> = $$Base<$In> & $$Disambiguation.$$ForEffect;
+}
 
 export const never = (never: never): never => never;

@@ -1,4 +1,4 @@
-import type { $$Spy } from "./Mocking";
+import type { $$Spy } from "./Spy";
 import type { StandardSchemaV1 } from "./StandardSchema";
 
 /**

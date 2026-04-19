@@ -17,11 +17,11 @@ export interface $$Configuration {
    *
    * @default undefined
    */
-  scope?: "async" | "sync";
+  readonly scope?: "async" | "sync";
 }
 
 export interface $$Config {
-  scope: $$Scope;
+  readonly scope: $$Scope;
 }
 
 export const fromConfiguration = async (

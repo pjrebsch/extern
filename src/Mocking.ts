@@ -1,74 +1,21 @@
 import { DuplicateMockError } from "./Error";
+import { $$Map, type $$Spy, type $$Spyable } from "./Spy";
 import type { StandardSchemaV1 } from "./StandardSchema";
-import type { $$Disambiguation, $$Mode } from "./Types";
-
-/**
- * Defining a mock returns this spy interface that can be used to
- * make assertions about the use of the mock and its identity.
- */
-export type $$Spy<$Out = unknown> =
-  | $$Spy.$$Mocked<$Out>
-  | $$Spy.$$Skipped<$Out>;
-
-namespace $$Spy {
-  export type $$Mocked<$Out> = $$Base<$Out> & $$Distinction.$$Mocked<$Out>;
-  export type $$Skipped<$Out> = $$Base<$Out> & $$Distinction.$$Skipped;
-
-  export type $$Base<$Out> = $$Disambiguation & {
-    readonly schema: StandardSchemaV1<$Out>;
-    readonly specificity: number;
-    readonly executions: Array<$$Execution>;
-    readonly stack: string;
-  };
-
-  export type $$Distinction<$Out> =
-    | $$Distinction.$$Mocked<$Out>
-    | $$Distinction.$$Skipped;
-
-  export namespace $$Distinction {
-    export interface $$Mocked<$Out> {
-      readonly kind: "mocked";
-      readonly value: $Out;
-    }
-
-    export interface $$Skipped {
-      readonly kind: "skipped";
-    }
-  }
-}
-
-export type $$SpyMap = Map<StandardSchemaV1, Array<$$Spy>>;
+import { type $$Disambiguation } from "./Types";
+import { augmentFunction, callerStack } from "./Util";
 
 /**
  * The function used to build a mock in a testing block.
  */
-export type $$Mocker = <$Out>(schema: StandardSchemaV1<$Out>) => $$Mock<$Out>;
-
-/**
- * Information captured about each use of a mock during a testing block.
- */
-export interface $$Execution {
-  mode: $$Mode;
-  named?: string;
-  given?: unknown;
-}
-
-type $$With<$Out> = (value: $Out) => $$Spy.$$Mocked<$Out>;
-type $$Skip<$Out> = () => $$Spy.$$Skipped<$Out>;
-
-type $$Named<$Out> = (name: string) => {
-  with: $$With<$Out>;
-  skip: $$Skip<$Out>;
+export type $$Mocker = {
+  <$Out>(
+    schema: StandardSchemaV1<$Out>,
+  ): $$Spyable.$$ForValue.$$Interface<$Out>;
+  readonly effect: $$Spyable.$$ForEffect.$$Interface;
 };
 
-interface $$Mock<$Out> {
-  with: $$With<$Out>;
-  skip: $$Skip<$Out>;
-  named: $$Named<$Out>;
-}
-
 export const exactly =
-  (disamb: $$Disambiguation) =>
+  (disamb: $$Disambiguation.$$ForValue) =>
   (spy: $$Spy): boolean => {
     if ("named" in disamb || "named" in spy) {
       if ("named" in disamb !== "named" in spy) return false;
@@ -79,7 +26,7 @@ export const exactly =
   };
 
 export const approximately =
-  (disamb: $$Disambiguation) =>
+  (disamb: $$Disambiguation.$$ForValue) =>
   (spy: $$Spy): boolean => {
     if ("named" in spy) {
       if (disamb.named !== spy.named) return false;
@@ -88,44 +35,35 @@ export const approximately =
     return true;
   };
 
-const callerStack = (ignore: Function, limit?: number) => {
-  const trace: { stack: NonNullable<Error["stack"]> } = { stack: "" };
-
-  const originalLimit = Error.stackTraceLimit;
-  Error.stackTraceLimit = limit ?? originalLimit;
-  Error.captureStackTrace(trace, ignore);
-  Error.stackTraceLimit = originalLimit;
-
-  const [_message, ...frames] = trace.stack.split("\n");
-
-  return frames.join("\n");
-};
+/**
+ * Defines a bit field to easily compare the specificity of a mock definition.
+ */
+const Specificity = { named: 0b1, none: 0b0 } as const;
 
 export const mocking = () => {
-  const spies: $$SpyMap = new Map();
+  const spies = $$Map.build();
 
-  const mock: $$Mocker = <$Out>(
+  const forValue = <$Out>(
     schema: StandardSchemaV1<$Out>,
-  ): $$Mock<$Out> => {
-    const $use = <$Distinction extends $$Spy.$$Distinction<$Out>>(
-      disamb: $$Disambiguation,
-      distinction: $Distinction,
-    ): $$Spy.$$Base<$Out> & $Distinction => {
+  ): $$Spyable.$$ForValue.$$Interface<$Out> => {
+    const $use = (
+      disamb: $$Disambiguation.$$ForValue,
+      strategy: $$Spy.$$Strategy.$$ForValue.$$Any<$Out>,
+    ): $$Spy.$$ForValue<$Out> => {
       const exactlyMatches = exactly(disamb);
       const existing = spies.get(schema) ?? [];
 
-      /**
-       * A bit field to easily compare the specificity of a mock definition.
-       */
-      const specificity = "named" in disamb ? 0b1 : 0b0;
+      const specificity =
+        "named" in disamb ? Specificity.named : Specificity.none;
 
-      const spy = {
+      const spy: $$Spy.$$ForValue<$Out> = {
         ...disamb,
         schema,
         specificity,
         executions: [],
         stack: callerStack($use, 1),
-        ...distinction,
+        strategy,
+        kind: "value",
       };
 
       /**
@@ -141,32 +79,78 @@ export const mocking = () => {
         if (exactlyMatches(next)) throw new DuplicateMockError();
         if (specificity >= next.specificity) break;
       }
-      existing.splice(insertionPoint, 0, spy);
 
+      existing.splice(insertionPoint, 0, spy);
       spies.set(schema, existing);
 
       return spy;
     };
 
-    const $with =
-      (disamb: $$Disambiguation) =>
-      (value: $Out): $$Spy.$$Mocked<$Out> => {
-        return $use(disamb, { kind: "mocked", value });
+    const $substitute =
+      (disamb: $$Disambiguation.$$ForValue) =>
+      (value: $Out): $$Spy.$$ForValue<$Out> => {
+        return $use(disamb, { kind: "substitute", value });
       };
 
-    const $skip = (disamb: $$Disambiguation) => (): $$Spy.$$Skipped<$Out> => {
-      return $use(disamb, { kind: "skipped" });
-    };
+    const $passthrough =
+      (disamb: $$Disambiguation.$$ForValue) => (): $$Spy.$$ForValue<$Out> => {
+        return $use(disamb, { kind: "passthrough" });
+      };
 
     return {
-      with: $with({}),
-      skip: $skip({}),
+      substitute: $substitute({}),
+      with: $substitute({}),
+
+      passthrough: $passthrough({}),
+      skip: $passthrough({}),
+
       named: (name: string) => ({
-        with: $with({ named: name }),
-        skip: $skip({ named: name }),
+        substitute: $substitute({ named: name }),
+        with: $substitute({ named: name }),
+
+        passthrough: $passthrough({ named: name }),
+        skip: $passthrough({ named: name }),
       }),
     };
   };
+
+  const forEffect = (): $$Spyable.$$ForEffect.$$Interface => {
+    const $use = (
+      { named }: $$Disambiguation.$$ForEffect,
+      strategy: $$Spy.$$Strategy.$$ForEffect.$$Any,
+    ): $$Spy.$$ForEffect => {
+      const existing = spies.effects.get(named);
+      if (existing) throw new DuplicateMockError();
+
+      const spy: $$Spy.$$ForEffect = {
+        named,
+        specificity: Specificity.named,
+        executions: [],
+        stack: callerStack($use, 1),
+        strategy,
+        kind: "effect",
+      };
+
+      spies.effects.set(named, spy);
+
+      return spy;
+    };
+
+    const $observe = (disamb: $$Disambiguation.$$ForEffect) => () =>
+      $use(disamb, { kind: "observe" });
+
+    const $passthrough = (disamb: $$Disambiguation.$$ForEffect) => () =>
+      $use(disamb, { kind: "passthrough" });
+
+    return {
+      named: (name: string) => ({
+        observe: $observe({ named: name }),
+        passthrough: $passthrough({ named: name }),
+      }),
+    };
+  };
+
+  const mock: $$Mocker = augmentFunction(forValue, { effect: forEffect() });
 
   return { mock, spies };
 };

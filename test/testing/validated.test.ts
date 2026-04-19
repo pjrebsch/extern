@@ -199,9 +199,9 @@ describe("`extern.testing`", async () => {
         await extern.testing(async (mock) => {
           const spy = mock(schema).with(123);
 
-          expect(spy.kind).toBe("mocked");
+          expect(spy.kind).toBe("value");
           expect(spy.schema).toBe(schema);
-          expect(spy.value).toBe(123);
+          expect(spy.strategy).toEqual({ kind: "substitute", value: 123 });
           expect(spy.specificity).toBe(0);
 
           await example(extern);
@@ -228,12 +228,12 @@ describe("`extern.testing`", async () => {
             const spy2 = mock(schema).with(27);
 
             expect(spy1.schema).toBe(schema);
-            expect(spy1.value).toBe(9);
+            expect(spy1.strategy).toEqual({ kind: "substitute", value: 9 });
             expect(spy1.specificity).toBe(1);
             expect(spy1.named).toEqual("abc");
 
             expect(spy2.schema).toBe(schema);
-            expect(spy2.value).toBe(27);
+            expect(spy2.strategy).toEqual({ kind: "substitute", value: 27 });
             expect(spy2.specificity).toBe(0);
 
             await example(extern);
@@ -257,12 +257,12 @@ describe("`extern.testing`", async () => {
         });
       });
 
-      describe("of skipped mock", () => {
-        it("is of skipped kind", async () => {
+      describe("of a skipped mock", () => {
+        it("has a passthrough strategy", async () => {
           await extern.testing(async (mock) => {
             const spy = mock(schema).skip();
 
-            expect(spy.kind).toBe("skipped");
+            expect(spy.strategy).toEqual({ kind: "passthrough" });
 
             await example(extern);
           });
