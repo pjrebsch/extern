@@ -14,11 +14,6 @@ export default defineConfig({
   source: { tsconfigPath: "./tsconfig.build.json" },
   output: {
     target: "node",
-    minify: {
-      jsOptions: {
-        minimizerOptions: { minify: true, compress: true, mangle: true },
-      },
-    },
     distPath: { root: "./dist" },
     cleanDistPath: true,
     sourceMap: false,
