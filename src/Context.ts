@@ -1,5 +1,5 @@
-import type { $$SpyMap } from "./Mocking";
+import type { $$Map } from "./Spy";
 
 export interface $$Context {
-  spies: $$SpyMap;
+  readonly spies: $$Map;
 }

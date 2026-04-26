@@ -1,7 +1,7 @@
 import type { $$Config } from "../../../../../Config";
 import type { StandardSchemaV1 } from "../../../../../StandardSchema";
 import type { Promisable, Promised } from "../../../../../Types";
-import { $will } from "../../../../Will";
+import { $will } from "../../../../Core";
 
 export type $$will<$Out, $In> = <$O extends Promisable<$Out>>(
   fn: (given: $In) => $O,

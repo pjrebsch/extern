@@ -3,22 +3,22 @@ import type { $$Context } from "./Context";
 import { IllegalConcurrencyTestingError } from "./Error";
 
 export interface $$Scope {
-  current: () => $$Context | undefined;
-  run: (context: $$Context, fn: () => Promise<void>) => Promise<void>;
+  readonly current: () => $$Context | undefined;
+  readonly run: (context: $$Context, fn: () => Promise<void>) => Promise<void>;
 }
 
 class $$AsyncScope implements $$Scope {
-  private store: AsyncLocalStorage<$$Context | undefined>;
+  private readonly store: AsyncLocalStorage<$$Context | undefined>;
 
   constructor(m: typeof import("node:async_hooks")) {
     this.store = new m.AsyncLocalStorage({ defaultValue: undefined });
   }
 
-  public current = () => {
+  public readonly current = () => {
     return this.store.getStore();
   };
 
-  public run = async (
+  public readonly run = async (
     context: $$Context,
     fn: () => Promise<void>,
   ): Promise<void> => {
@@ -27,7 +27,7 @@ class $$AsyncScope implements $$Scope {
 }
 
 class $$SyncScope implements $$Scope {
-  private mutex = new $$Mutex({
+  private readonly mutex = new $$Mutex({
     onContest: () => {
       throw new IllegalConcurrencyTestingError();
     },
@@ -35,11 +35,11 @@ class $$SyncScope implements $$Scope {
 
   private context: $$Context | undefined = undefined;
 
-  public current = () => {
+  public readonly current = () => {
     return this.context;
   };
 
-  public run = async (
+  public readonly run = async (
     context: $$Context,
     fn: () => Promise<void>,
   ): Promise<void> => {
@@ -60,15 +60,15 @@ interface $$MutexConfig {
 }
 
 class $$Mutex {
-  private queue: Promise<void>[] = [];
+  private readonly queue: Promise<void>[] = [];
 
-  private onContest: $$MutexConfig["onContest"];
+  private readonly onContest: $$MutexConfig["onContest"];
 
   constructor(config?: Partial<$$MutexConfig>) {
     this.onContest = config?.onContest || Promise.resolve;
   }
 
-  public acquire = async (): Promise<() => void> => {
+  public readonly acquire = async (): Promise<() => void> => {
     let release: () => void = () => {};
 
     const queue = this.queue;
