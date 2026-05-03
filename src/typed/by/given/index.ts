@@ -1,5 +1,5 @@
 import type { $$Config } from "../../../Config";
-import type { StandardSchemaV1 } from "../../../StandardSchema";
+import type { $$Identity } from "../../../Types";
 import { $$will } from "./will";
 
 export interface $$Given<$Out, $In> {
@@ -9,7 +9,7 @@ export interface $$Given<$Out, $In> {
 export type $$given<$Out> = <const $In>(given: $In) => $$Given<$Out, $In>;
 
 export const $$given =
-  <$Out>(config: $$Config, schema: StandardSchemaV1<$Out>): $$given<$Out> =>
+  <$Out>(config: $$Config, identity: $$Identity<$Out>): $$given<$Out> =>
   <const $In>(given: $In): $$Given<$Out, $In> => ({
-    will: $$will<$Out, $In>(config, schema, given),
+    will: $$will<$Out, $In>(config, identity, given),
   });

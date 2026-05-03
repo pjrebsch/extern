@@ -1,12 +1,11 @@
 import type { $$Config } from "../Config";
 import { NotMockedError } from "../Error";
 import { approximately } from "../Mocking";
-import type { StandardSchemaV1 } from "../StandardSchema";
-import { type $$Params } from "../Types";
+import { type $$Identity, type $$Params } from "../Types";
 
 export const $will = <$Out, $In>(
   config: $$Config,
-  schema: StandardSchemaV1<unknown>,
+  identity: $$Identity,
   params: $$Params.$$ForValue<$In>,
   fn: () => $Out,
 ): $Out => {
@@ -17,7 +16,7 @@ export const $will = <$Out, $In>(
    */
   if (!context) return fn();
 
-  const spy = context.spies.get(schema)?.find(approximately(params));
+  const spy = context.spies.get(identity)?.find(approximately(params));
 
   if (!spy) throw new NotMockedError();
 

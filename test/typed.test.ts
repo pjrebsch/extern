@@ -210,5 +210,14 @@ describe("`extern.typed`", async () => {
         });
       });
     });
+
+    describe("with an `extern.T` value", () => {
+      it("accepts it", () => {
+        const t = extern.T<number>();
+        const result = extern.typed.by(t).will(() => 123);
+
+        expectTypeOf<typeof result>().toEqualTypeOf<number>();
+      });
+    });
   });
 });

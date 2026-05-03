@@ -1,5 +1,5 @@
 import type { $$Config } from "../../Config";
-import type { StandardSchemaV1 } from "../../StandardSchema";
+import type { $$Identity } from "../../Types";
 import { $$given } from "./given";
 import { $$named } from "./named";
 import { $$will } from "./will";
@@ -12,8 +12,8 @@ export interface $$By<$Out> {
 
 export const $$by =
   (config: $$Config) =>
-  <$Out>(schema: StandardSchemaV1<$Out>): $$By<$Out> => ({
-    named: $$named<$Out>(config, schema),
-    given: $$given<$Out>(config, schema),
-    will: $$will<$Out>(config, schema),
+  <$Out>(identity: $$Identity<$Out>): $$By<$Out> => ({
+    named: $$named<$Out>(config, identity),
+    given: $$given<$Out>(config, identity),
+    will: $$will<$Out>(config, identity),
   });

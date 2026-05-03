@@ -1,6 +1,5 @@
 import type { $$Config } from "../../../../../Config";
-import type { StandardSchemaV1 } from "../../../../../StandardSchema";
-import type { Promisable, Promised } from "../../../../../Types";
+import type { $$Identity, Promisable, Promised } from "../../../../../Types";
 import { $will } from "../../../../Core";
 
 export type $$will<$Out, $In> = <$O extends Promisable<$Out>>(
@@ -10,11 +9,11 @@ export type $$will<$Out, $In> = <$O extends Promisable<$Out>>(
 export const $$will =
   <$Out, $In>(
     config: $$Config,
-    schema: StandardSchemaV1<$Out>,
+    identity: $$Identity<$Out>,
     given: $In,
   ): $$will<$Out, $In> =>
   <$O extends Promisable<$Out>>(fn: (given: $In) => $O): Promised<$Out, $O> => {
-    return $will<$O, $In>(config, schema, { given }, () =>
+    return $will<$O, $In>(config, identity, { given }, () =>
       fn(given),
     ) as Promised<$Out, $O>;
   };

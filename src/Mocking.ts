@@ -1,16 +1,13 @@
 import { DuplicateMockError } from "./Error";
 import { $$Map, type $$Spy, type $$Spyable } from "./Spy";
-import type { StandardSchemaV1 } from "./StandardSchema";
-import { type $$Disambiguation } from "./Types";
+import { type $$Disambiguation, type $$Identity } from "./Types";
 import { augmentFunction, callerStack } from "./Util";
 
 /**
  * The function used to build a mock in a testing block.
  */
 export type $$Mocker = {
-  <$Out>(
-    schema: StandardSchemaV1<$Out>,
-  ): $$Spyable.$$ForValue.$$Interface<$Out>;
+  <$Out>(schema: $$Identity<$Out>): $$Spyable.$$ForValue.$$Interface<$Out>;
   readonly effect: $$Spyable.$$ForEffect.$$Interface;
 };
 
@@ -44,7 +41,7 @@ export const mocking = () => {
   const spies = $$Map.build();
 
   const forValue = <$Out>(
-    schema: StandardSchemaV1<$Out>,
+    schema: $$Identity<$Out>,
   ): $$Spyable.$$ForValue.$$Interface<$Out> => {
     const $use = (
       disamb: $$Disambiguation.$$ForValue,

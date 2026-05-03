@@ -1,5 +1,6 @@
 import { fromConfiguration, type $$Configuration } from "./Config";
 import { $$effect, type $$Effect } from "./effect";
+import { $$T } from "./T";
 import { $$testing, type $$Testing } from "./testing";
 import { $$typed, type $$Typed } from "./typed";
 import { $$validated, type $$Validated } from "./validated";
@@ -9,6 +10,8 @@ export type { $$Configuration as Configuration } from "./Config.ts";
 export type { $$Execution as Execution, $$Spy as Spy } from "./Spy";
 
 export type { $$Mocker as Mocker } from "./Mocking.ts";
+
+export { $$T as T } from "./T";
 
 export type {
   DuplicateMockError,
@@ -43,6 +46,12 @@ export interface Initialized {
    * extern blocks.
    */
   readonly testing: $$Testing;
+
+  /**
+   * Build a type-only stand-in for a real schema, usable as the identity
+   * passed to `typed.by()` (and `mock()` inside a testing block).
+   */
+  readonly T: typeof $$T;
 }
 
 /**
@@ -59,5 +68,6 @@ export const initialize = async (
     typed: $$typed($config),
     effect: $$effect($config),
     testing: $$testing($config),
+    T: $$T,
   };
 };

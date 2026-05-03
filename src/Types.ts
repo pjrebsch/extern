@@ -1,3 +1,6 @@
+import type { StandardSchemaV1 } from "./StandardSchema";
+import type { $$T } from "./T";
+
 export type Promisable<$T> = $T | Promise<$T>;
 
 export type Promised<$T, $Promisable extends Promisable<$T>> =
@@ -6,6 +9,8 @@ export type Promised<$T, $Promisable extends Promisable<$T>> =
 export type $$Name = string;
 
 export type $$Mode = "typed" | "validated" | "effect";
+
+export type $$Identity<$T = unknown> = StandardSchemaV1<$T> | $$T<$T>;
 
 export namespace $$Disambiguation {
   type $$Base = { readonly named: string };

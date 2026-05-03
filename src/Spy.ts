@@ -1,5 +1,4 @@
-import type { StandardSchemaV1 } from "./StandardSchema";
-import type { $$Disambiguation, $$Mode, $$Name } from "./Types";
+import type { $$Disambiguation, $$Identity, $$Mode, $$Name } from "./Types";
 
 /**
  * Information captured about each use of a mock during a testing block.
@@ -33,7 +32,7 @@ export namespace $$Spy {
   export type $$ForValue<$Out = unknown> = $$Base
     & $$Disambiguation.$$ForValue & {
       readonly kind: "value";
-      readonly schema: StandardSchemaV1<$Out>;
+      readonly schema: $$Identity<$Out>;
       readonly strategy: $$Strategy.$$ForValue.$$Any<$Out>;
     };
 
@@ -121,13 +120,12 @@ export namespace $$Spyable {
   }
 }
 
-export type $$Map = $$Map.$$Interface<
-  StandardSchemaV1,
-  Array<$$Spy.$$ForValue>
-> & { readonly effects: $$Map.$$Interface<$$Name, $$Spy.$$ForEffect> };
+export type $$Map = $$Map.$$Interface<$$Identity, Array<$$Spy.$$ForValue>> & {
+  readonly effects: $$Map.$$Interface<$$Name, $$Spy.$$ForEffect>;
+};
 
 export namespace $$Map {
-  export type $$ForValue = Map<StandardSchemaV1, Array<$$Spy.$$ForValue>>;
+  export type $$ForValue = Map<$$Identity, Array<$$Spy.$$ForValue>>;
   export type $$ForEffect = Map<$$Name, $$Spy.$$ForEffect>;
 
   export interface $$Interface<$K, $V> {

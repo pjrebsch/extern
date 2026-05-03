@@ -12,6 +12,18 @@ export abstract class ExternError extends Error {
 }
 
 /**
+ * The error thrown when an object is provided to `extern.validated`
+ * that does not conform to the Standard Schema interface.
+ */
+export class InvalidSchemaError extends ExternError {
+  constructor() {
+    super();
+    this.name = "InvalidSchemaError";
+    this.message = "Expected an object that conforms to Standard Schema.";
+  }
+}
+
+/**
  * The error thrown during an `extern.validated` block if the block
  * function's return value does not conform to the specified schema.
  */

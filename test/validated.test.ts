@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "bun:test";
 import * as S from "sury";
 import { initialize } from "../src";
-import { InvalidDataTypeError } from "../src/Error";
+import { InvalidDataTypeError, InvalidSchemaError } from "../src/Error";
 
 describe("`extern.validated`", async () => {
   const extern = await initialize();
@@ -219,6 +219,19 @@ describe("`extern.validated`", async () => {
             typeof result
           >();
         });
+      });
+    });
+
+    describe("with an `extern.T` value", () => {
+      it("does not accept it", () => {
+        const t = extern.T<number>();
+
+        expect(() =>
+          extern.validated.by(
+            /* @ts-expect-error */
+            t,
+          ),
+        ).toThrowError(InvalidSchemaError);
       });
     });
   });
