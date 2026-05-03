@@ -43,24 +43,24 @@ export const mocking = () => {
   const forValue = <$Out>(
     schema: $$Identity<$Out>,
   ): $$Spyable.$$ForValue.$$Interface<$Out> => {
-    const $use = (
+    const $use = <$Strategy extends $$Spy.$$Strategy.$$ForValue.$$Any<$Out>>(
       disamb: $$Disambiguation.$$ForValue,
-      strategy: $$Spy.$$Strategy.$$ForValue.$$Any<$Out>,
-    ): $$Spy.$$ForValue<$Out> => {
+      strategy: $Strategy,
+    ): $$Spy.$$ForValue<$Out, $Strategy> => {
       const exactlyMatches = exactly(disamb);
       const existing = spies.get(schema) ?? [];
 
       const specificity =
         "named" in disamb ? Specificity.named : Specificity.none;
 
-      const spy: $$Spy.$$ForValue<$Out> = {
+      const spy = {
         ...disamb,
         schema,
         specificity,
         executions: [],
         stack: callerStack($use, 1),
         strategy,
-        kind: "value",
+        kind: "value" as const,
       };
 
       /**
@@ -84,15 +84,13 @@ export const mocking = () => {
     };
 
     const $substitute =
-      (disamb: $$Disambiguation.$$ForValue) =>
-      (value: $Out): $$Spy.$$ForValue<$Out> => {
+      (disamb: $$Disambiguation.$$ForValue) => (value: $Out) => {
         return $use(disamb, { kind: "substitute", value });
       };
 
-    const $passthrough =
-      (disamb: $$Disambiguation.$$ForValue) => (): $$Spy.$$ForValue<$Out> => {
-        return $use(disamb, { kind: "passthrough" });
-      };
+    const $passthrough = (disamb: $$Disambiguation.$$ForValue) => () => {
+      return $use(disamb, { kind: "passthrough" });
+    };
 
     return {
       substitute: $substitute({}),
@@ -112,20 +110,20 @@ export const mocking = () => {
   };
 
   const forEffect = (): $$Spyable.$$ForEffect.$$Interface => {
-    const $use = (
+    const $use = <$Strategy extends $$Spy.$$Strategy.$$ForEffect.$$Any>(
       { named }: $$Disambiguation.$$ForEffect,
-      strategy: $$Spy.$$Strategy.$$ForEffect.$$Any,
-    ): $$Spy.$$ForEffect => {
+      strategy: $Strategy,
+    ): $$Spy.$$ForEffect<$Strategy> => {
       const existing = spies.effects.get(named);
       if (existing) throw new DuplicateMockError();
 
-      const spy: $$Spy.$$ForEffect = {
+      const spy = {
         named,
         specificity: Specificity.named,
         executions: [],
         stack: callerStack($use, 1),
         strategy,
-        kind: "effect",
+        kind: "effect" as const,
       };
 
       spies.effects.set(named, spy);

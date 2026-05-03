@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, expectTypeOf, it } from "bun:test";
 import * as S from "sury";
 import { initialize, type Initialized } from "../../src";
 import {
@@ -201,6 +201,11 @@ describe("`extern.testing`", async () => {
           await extern.testing((mock) => {
             const spy = mock(schema).with(123);
 
+            expectTypeOf(spy.strategy).toEqualTypeOf<{
+              readonly kind: "substitute";
+              readonly value: number;
+            }>();
+
             expect(spy.kind).toBe("value");
             expect(spy.strategy).toEqual({ kind: "substitute", value: 123 });
             expect(spy.schema).toBe(schema);
@@ -263,6 +268,10 @@ describe("`extern.testing`", async () => {
           it("has a passthrough strategy", async () => {
             await extern.testing((mock) => {
               const spy = mock(schema).skip();
+
+              expectTypeOf(spy.strategy).toEqualTypeOf<{
+                readonly kind: "passthrough";
+              }>();
 
               expect(spy.strategy).toEqual({ kind: "passthrough" });
 

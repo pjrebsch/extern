@@ -29,17 +29,24 @@ export type $$Spy<$Out = unknown> = $$Spy.$$Any<$Out>;
 export namespace $$Spy {
   export type $$Any<$Out = unknown> = $$ForValue<$Out> | $$ForEffect;
 
-  export type $$ForValue<$Out = unknown> = $$Base
+  export type $$ForValue<
+    $Out = unknown,
+    $Strategy extends $$Strategy.$$ForValue.$$Any<$Out> =
+      $$Strategy.$$ForValue.$$Any<$Out>,
+  > = $$Base
     & $$Disambiguation.$$ForValue & {
       readonly kind: "value";
       readonly schema: $$Identity<$Out>;
-      readonly strategy: $$Strategy.$$ForValue.$$Any<$Out>;
+      readonly strategy: $Strategy;
     };
 
-  export type $$ForEffect = $$Base
+  export type $$ForEffect<
+    $Strategy extends $$Strategy.$$ForEffect.$$Any =
+      $$Strategy.$$ForEffect.$$Any,
+  > = $$Base
     & $$Disambiguation.$$ForEffect & {
       readonly kind: "effect";
-      readonly strategy: $$Strategy.$$ForEffect.$$Any;
+      readonly strategy: $Strategy;
     };
 
   type $$Base = {
@@ -97,9 +104,14 @@ export namespace $$Spyable {
       };
     };
 
-    export type $$Substitute<$Out> = (value: $Out) => $$Spy.$$ForValue<$Out>;
+    export type $$Substitute<$Out> = (
+      value: $Out,
+    ) => $$Spy.$$ForValue<$Out, $$Spy.$$Strategy.$$ForValue.$$Substitute<$Out>>;
 
-    export type $$Passthrough<$Out> = () => $$Spy.$$ForValue<$Out>;
+    export type $$Passthrough<$Out> = () => $$Spy.$$ForValue<
+      $Out,
+      $$Spy.$$Strategy.$$ForValue.$$Passthrough
+    >;
   }
 
   export namespace $$ForEffect {
@@ -114,9 +126,11 @@ export namespace $$Spyable {
       };
     };
 
-    export type $$Observe = () => $$Spy.$$ForEffect;
+    export type $$Observe =
+      () => $$Spy.$$ForEffect<$$Spy.$$Strategy.$$ForEffect.$$Observe>;
 
-    export type $$Passthrough = () => $$Spy.$$ForEffect;
+    export type $$Passthrough =
+      () => $$Spy.$$ForEffect<$$Spy.$$Strategy.$$ForEffect.$$Passthrough>;
   }
 }
 

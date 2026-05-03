@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, expectTypeOf, it } from "bun:test";
 import { initialize, type Initialized } from "../../src";
 import { DuplicateMockError, UnusedMocksError } from "../../src/Error";
 
@@ -89,6 +89,10 @@ describe("`extern.testing`", async () => {
 
           const spy = mock.effect.named("abc").observe();
 
+          expectTypeOf(spy.strategy).toEqualTypeOf<{
+            readonly kind: "observe";
+          }>();
+
           expect(spy.kind).toBe("effect");
           expect(spy.strategy).toEqual({ kind: "observe" });
           expect(spy.named).toBe("abc");
@@ -151,6 +155,10 @@ describe("`extern.testing`", async () => {
             const { example } = buildExample(extern);
 
             const spy = mock.effect.named("abc").passthrough();
+
+            expectTypeOf(spy.strategy).toEqualTypeOf<{
+              readonly kind: "passthrough";
+            }>();
 
             expect(spy.strategy).toEqual({ kind: "passthrough" });
 
