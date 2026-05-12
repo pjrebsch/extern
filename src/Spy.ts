@@ -27,8 +27,10 @@ export interface Execution {
 export type Spy<$Out = unknown> = Spy.Any<$Out>;
 
 export namespace Spy {
+  /** A spy for either a value block or an effect block. */
   export type Any<$Out = unknown> = ForValue<$Out> | ForEffect;
 
+  /** A spy for a value block. */
   export type ForValue<
     $Out = unknown,
     $Strategy extends Strategy.ForValue.Any<$Out> = Strategy.ForValue.Any<$Out>,
@@ -39,6 +41,7 @@ export namespace Spy {
       readonly strategy: $Strategy;
     };
 
+  /** A spy for an effect block. */
   export type ForEffect<
     $Strategy extends Strategy.ForEffect.Any = Strategy.ForEffect.Any,
   > = Base
@@ -55,21 +58,27 @@ export namespace Spy {
 
   export namespace Strategy {
     export namespace ForValue {
+      /** The mock/spy strategy for a value block. */
       export type Any<$Out> = Substitute<$Out> | Passthrough;
 
+      /** Substitution strategy for a value block.*/
       export type Substitute<$Out> = {
         readonly kind: "substitute";
         readonly value: $Out;
       };
 
+      /** Passthrough strategy for a value block. */
       export type Passthrough = { readonly kind: "passthrough" };
     }
 
+    /** The mock/spy strategy for an effect block. */
     export namespace ForEffect {
       export type Any = Observe | Passthrough;
 
+      /** Observation strategy for an effect block. */
       export type Observe = { readonly kind: "observe" };
 
+      /** Passthrough strategy for an effect block. */
       export type Passthrough = { readonly kind: "passthrough" };
     }
   }

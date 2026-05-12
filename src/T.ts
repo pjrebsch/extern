@@ -4,6 +4,9 @@ class TypeIdentity<$T> {
   declare private readonly [brand]: $T;
 }
 
-export type T<$T> = TypeIdentity<$T>;
-
 export const T = <$T>(): TypeIdentity<$T> => new TypeIdentity<$T>();
+
+/**
+ * A library-native type identity.
+ */
+export type T<$T> = TypeIdentity<$T>;
