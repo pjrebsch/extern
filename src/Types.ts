@@ -1,29 +1,29 @@
 import type { StandardSchemaV1 } from "./StandardSchema";
-import type { $$T } from "./T";
+import type { T } from "./T";
 
 export type Promisable<$T> = $T | Promise<$T>;
 
 export type Promised<$T, $Promisable extends Promisable<$T>> =
   $Promisable extends Promise<$T> ? Promise<$T> : $T;
 
-export type $$Name = string;
+export type Name = string;
 
-export type $$Mode = "typed" | "validated" | "effect";
+export type Mode = "typed" | "validated" | "effect";
 
-export type $$Identity<$T = unknown> = StandardSchemaV1<$T> | $$T<$T>;
+export type Identity<$T = unknown> = StandardSchemaV1<$T> | T<$T>;
 
-export namespace $$Disambiguation {
-  type $$Base = { readonly named: string };
+export namespace Disambiguation {
+  type Base = { readonly named: string };
 
-  export type $$ForValue = Partial<$$Base>;
-  export type $$ForEffect = Required<$$Base>;
+  export type ForValue = Partial<Base>;
+  export type ForEffect = Required<Base>;
 }
 
-export namespace $$Params {
-  type $$Base<$In> = { readonly given?: $In };
+export namespace Params {
+  type Base<$In> = { readonly given?: $In };
 
-  export type $$ForValue<$In> = $$Base<$In> & $$Disambiguation.$$ForValue;
-  export type $$ForEffect<$In> = $$Base<$In> & $$Disambiguation.$$ForEffect;
+  export type ForValue<$In> = Base<$In> & Disambiguation.ForValue;
+  export type ForEffect<$In> = Base<$In> & Disambiguation.ForEffect;
 }
 
 export const never = (never: never): never => never;

@@ -1,14 +1,14 @@
 import type { AsyncLocalStorage } from "node:async_hooks";
-import type { $$Context } from "./Context";
+import type { Context } from "./Context";
 import { IllegalConcurrencyTestingError } from "./Error";
 
-export interface $$Scope {
-  readonly current: () => $$Context | undefined;
-  readonly run: (context: $$Context, fn: () => Promise<void>) => Promise<void>;
+export interface Scope {
+  readonly current: () => Context | undefined;
+  readonly run: (context: Context, fn: () => Promise<void>) => Promise<void>;
 }
 
-class $$AsyncScope implements $$Scope {
-  private readonly store: AsyncLocalStorage<$$Context | undefined>;
+class AsyncScope implements Scope {
+  private readonly store: AsyncLocalStorage<Context | undefined>;
 
   constructor(m: typeof import("node:async_hooks")) {
     this.store = new m.AsyncLocalStorage({ defaultValue: undefined });
@@ -19,28 +19,28 @@ class $$AsyncScope implements $$Scope {
   };
 
   public readonly run = async (
-    context: $$Context,
+    context: Context,
     fn: () => Promise<void>,
   ): Promise<void> => {
     return this.store.run(context, fn);
   };
 }
 
-class $$SyncScope implements $$Scope {
-  private readonly mutex = new $$Mutex({
+class SyncScope implements Scope {
+  private readonly mutex = new Mutex({
     onContest: () => {
       throw new IllegalConcurrencyTestingError();
     },
   });
 
-  private context: $$Context | undefined = undefined;
+  private context: Context | undefined = undefined;
 
   public readonly current = () => {
     return this.context;
   };
 
   public readonly run = async (
-    context: $$Context,
+    context: Context,
     fn: () => Promise<void>,
   ): Promise<void> => {
     const release = await this.mutex.acquire();
@@ -55,16 +55,16 @@ class $$SyncScope implements $$Scope {
   };
 }
 
-interface $$MutexConfig {
+interface MutexConfig {
   onContest: (contestant: Promise<void>) => Promise<void>;
 }
 
-class $$Mutex {
+class Mutex {
   private readonly queue: Promise<void>[] = [];
 
-  private readonly onContest: $$MutexConfig["onContest"];
+  private readonly onContest: MutexConfig["onContest"];
 
-  constructor(config?: Partial<$$MutexConfig>) {
+  constructor(config?: Partial<MutexConfig>) {
     this.onContest = config?.onContest || Promise.resolve;
   }
 
@@ -89,10 +89,9 @@ class $$Mutex {
   };
 }
 
-export const $$asyncScope = () =>
-  import("node:async_hooks").then((m) => new $$AsyncScope(m));
+export const asyncScope = () =>
+  import("node:async_hooks").then((m) => new AsyncScope(m));
 
-export const $$syncScope = () => new $$SyncScope();
+export const syncScope = () => new SyncScope();
 
-export const $$scope = (): Promise<$$Scope> =>
-  $$asyncScope().catch($$syncScope);
+export const scope = (): Promise<Scope> => asyncScope().catch(syncScope);

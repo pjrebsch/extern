@@ -1,12 +1,12 @@
-import type { $$Config } from "../Config";
+import type { Config } from "../Config";
 import { NotMockedError } from "../Error";
 import { approximately } from "../Mocking";
-import { type $$Identity, type $$Params } from "../Types";
+import { type Identity, type Params } from "../Types";
 
-export const $will = <$Out, $In>(
-  config: $$Config,
-  identity: $$Identity,
-  params: $$Params.$$ForValue<$In>,
+export const will = <$Out, $In>(
+  config: Config,
+  identity: Identity,
+  params: Params.ForValue<$In>,
   fn: () => $Out,
 ): $Out => {
   const context = config.scope.current();

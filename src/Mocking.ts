@@ -1,19 +1,23 @@
 import { DuplicateMockError } from "./Error";
-import { $$Map, type $$Spy, type $$Spyable } from "./Spy";
-import { type $$Disambiguation, type $$Identity } from "./Types";
+import { IdentityMap, type Spy, type Spyable } from "./Spy";
+import { type Disambiguation, type Identity } from "./Types";
 import { augmentFunction, callerStack } from "./Util";
 
 /**
  * The function used to build a mock in a testing block.
  */
-export type $$Mocker = {
-  <$Out>(schema: $$Identity<$Out>): $$Spyable.$$ForValue.$$Interface<$Out>;
-  readonly effect: $$Spyable.$$ForEffect.$$Interface;
+export type Mocker = {
+  <$Out>(schema: Identity<$Out>): Spyable.ForValue.Interface<$Out>;
+
+  /**
+   * The interface used to spy on effect blocks.
+   */
+  readonly effect: Spyable.ForEffect.Interface;
 };
 
 export const exactly =
-  (disamb: $$Disambiguation.$$ForValue) =>
-  (spy: $$Spy): boolean => {
+  (disamb: Disambiguation.ForValue) =>
+  (spy: Spy): boolean => {
     if ("named" in disamb || "named" in spy) {
       if ("named" in disamb !== "named" in spy) return false;
       if (disamb.named !== spy.named) return false;
@@ -23,8 +27,8 @@ export const exactly =
   };
 
 export const approximately =
-  (disamb: $$Disambiguation.$$ForValue) =>
-  (spy: $$Spy): boolean => {
+  (disamb: Disambiguation.ForValue) =>
+  (spy: Spy): boolean => {
     if ("named" in spy) {
       if (disamb.named !== spy.named) return false;
     }
@@ -38,15 +42,15 @@ export const approximately =
 const Specificity = { named: 0b1, none: 0b0 } as const;
 
 export const mocking = () => {
-  const spies = $$Map.build();
+  const spies = IdentityMap.build();
 
   const forValue = <$Out>(
-    schema: $$Identity<$Out>,
-  ): $$Spyable.$$ForValue.$$Interface<$Out> => {
-    const $use = <$Strategy extends $$Spy.$$Strategy.$$ForValue.$$Any<$Out>>(
-      disamb: $$Disambiguation.$$ForValue,
+    schema: Identity<$Out>,
+  ): Spyable.ForValue.Interface<$Out> => {
+    const $use = <$Strategy extends Spy.Strategy.ForValue.Any<$Out>>(
+      disamb: Disambiguation.ForValue,
       strategy: $Strategy,
-    ): $$Spy.$$ForValue<$Out, $Strategy> => {
+    ): Spy.ForValue<$Out, $Strategy> => {
       const exactlyMatches = exactly(disamb);
       const existing = spies.get(schema) ?? [];
 
@@ -83,12 +87,11 @@ export const mocking = () => {
       return spy;
     };
 
-    const $substitute =
-      (disamb: $$Disambiguation.$$ForValue) => (value: $Out) => {
-        return $use(disamb, { kind: "substitute", value });
-      };
+    const $substitute = (disamb: Disambiguation.ForValue) => (value: $Out) => {
+      return $use(disamb, { kind: "substitute", value });
+    };
 
-    const $passthrough = (disamb: $$Disambiguation.$$ForValue) => () => {
+    const $passthrough = (disamb: Disambiguation.ForValue) => () => {
       return $use(disamb, { kind: "passthrough" });
     };
 
@@ -109,11 +112,11 @@ export const mocking = () => {
     };
   };
 
-  const forEffect = (): $$Spyable.$$ForEffect.$$Interface => {
-    const $use = <$Strategy extends $$Spy.$$Strategy.$$ForEffect.$$Any>(
-      { named }: $$Disambiguation.$$ForEffect,
+  const forEffect = (): Spyable.ForEffect.Interface => {
+    const $use = <$Strategy extends Spy.Strategy.ForEffect.Any>(
+      { named }: Disambiguation.ForEffect,
       strategy: $Strategy,
-    ): $$Spy.$$ForEffect<$Strategy> => {
+    ): Spy.ForEffect<$Strategy> => {
       const existing = spies.effects.get(named);
       if (existing) throw new DuplicateMockError();
 
@@ -131,10 +134,10 @@ export const mocking = () => {
       return spy;
     };
 
-    const $observe = (disamb: $$Disambiguation.$$ForEffect) => () =>
+    const $observe = (disamb: Disambiguation.ForEffect) => () =>
       $use(disamb, { kind: "observe" });
 
-    const $passthrough = (disamb: $$Disambiguation.$$ForEffect) => () =>
+    const $passthrough = (disamb: Disambiguation.ForEffect) => () =>
       $use(disamb, { kind: "passthrough" });
 
     return {
@@ -145,7 +148,7 @@ export const mocking = () => {
     };
   };
 
-  const mock: $$Mocker = augmentFunction(forValue, { effect: forEffect() });
+  const mock: Mocker = augmentFunction(forValue, { effect: forEffect() });
 
   return { mock, spies };
 };

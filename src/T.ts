@@ -1,9 +1,9 @@
 declare const brand: unique symbol;
 
-class T<$T> {
+class TypeIdentity<$T> {
   declare private readonly [brand]: $T;
 }
 
-export type $$T<$T> = T<$T>;
+export type T<$T> = TypeIdentity<$T>;
 
-export const $$T = <$T>(): $$T<$T> => new T<$T>();
+export const T = <$T>(): TypeIdentity<$T> => new TypeIdentity<$T>();

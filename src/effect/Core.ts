@@ -1,9 +1,9 @@
-import type { $$Config } from "../Config";
-import { type $$Params, type Promisable } from "../Types";
+import type { Config } from "../Config";
+import { type Params, type Promisable } from "../Types";
 
-export const $will = <$Out extends Promisable<void>, $In>(
-  config: $$Config,
-  params: Partial<$$Params.$$ForEffect<$In>>,
+export const will = <$Out extends Promisable<void>, $In>(
+  config: Config,
+  params: Partial<Params.ForEffect<$In>>,
   fn: () => $Out,
 ): $Out => {
   const context = config.scope.current();

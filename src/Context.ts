@@ -1,5 +1,5 @@
-import type { $$Map } from "./Spy";
+import type { IdentityMap } from "./Spy";
 
-export interface $$Context {
-  readonly spies: $$Map;
+export interface Context {
+  readonly spies: IdentityMap;
 }

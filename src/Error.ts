@@ -1,4 +1,4 @@
-import type { $$Spy } from "./Spy";
+import type { Spy } from "./Spy";
 import type { StandardSchemaV1 } from "./StandardSchema";
 
 /**
@@ -99,7 +99,7 @@ export class UnusedMocksError extends ExternError {
     /**
      * The list of mocks that were found to not be used.
      */
-    unused: ReadonlyArray<$$Spy>,
+    unused: ReadonlyArray<Spy>,
   ) {
     super();
     this.name = "UnusedMocksError";

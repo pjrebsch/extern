@@ -1,9 +1,9 @@
-import { $$asyncScope, $$scope, $$syncScope, type $$Scope } from "./Scope";
+import { asyncScope, scope, syncScope, type Scope } from "./Scope";
 
 /**
  * The available configurations for this library.
  */
-export interface $$Configuration {
+export interface Configuration {
   /**
    * Forces a specific execution scope for tests.
    *
@@ -20,24 +20,24 @@ export interface $$Configuration {
   readonly scope?: "async" | "sync";
 }
 
-export interface $$Config {
-  readonly scope: $$Scope;
+export interface Config {
+  readonly scope: Scope;
 }
 
 export const fromConfiguration = async (
-  configuration: $$Configuration,
-): Promise<$$Config> => {
+  configuration: Configuration,
+): Promise<Config> => {
   return { scope: await $scope(configuration) };
 };
 
-const $scope = (configuration: $$Configuration): Promise<$$Scope> => {
+const $scope = (configuration: Configuration): Promise<Scope> => {
   switch (configuration.scope) {
     case "async":
-      return $$asyncScope();
+      return asyncScope();
     case "sync":
-      return Promise.resolve($$syncScope());
+      return Promise.resolve(syncScope());
     case undefined:
-      return $$scope();
+      return scope();
     default:
       throw new Error(
         `Invalid configuration option for scope: ${configuration.scope}`,

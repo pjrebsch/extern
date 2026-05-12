@@ -1,13 +1,13 @@
-import type { $$Config } from "../Config";
+import type { Config } from "../Config";
 import { InvalidDataTypeError, NotMockedError } from "../Error";
 import { approximately } from "../Mocking";
 import type { StandardSchemaV1 } from "../StandardSchema";
-import type { $$Params } from "../Types";
+import type { Params } from "../Types";
 
-export const $will = async <$Out, $In>(
-  config: $$Config,
+export const will = async <$Out, $In>(
+  config: Config,
   schema: StandardSchemaV1<$Out>,
-  params: $$Params.$$ForValue<$In>,
+  params: Params.ForValue<$In>,
   fn: () => Promise<$Out>,
 ): Promise<$Out> => {
   const context = config.scope.current();
