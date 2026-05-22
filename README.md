@@ -1,15 +1,16 @@
-Provides the most seamless approach to typed dependency injection for test suites.
-
 [![npm](https://img.shields.io/badge/npm-ffffff.svg?style=for-the-badge&color=000000&logo=npm&logoColor=CB3837)](https://www.npmjs.com/package/@ghostry/extern)
+[![npmx](https://img.shields.io/badge/npmx-ffffff.svg?style=for-the-badge&color=000000&logo=data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTMiIGhlaWdodD0iMTUzIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAxNTMgMTUzIj4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNi43MDQgOS45ODI3KSI+CiAgICA8cGF0aCBkPSJtMC45MzQ3NiA5Ny4yMDVoMjQuMDgxdjIzLjY5M2gtMjQuMDgxeiIgZmlsbD0iI2ZmZiI+PC9wYXRoPgogICAgPHBhdGggZD0ibTEwMy4xMi05LjIzMDctMy42MjExIDEwLjI0Ni00Ni4zMDkgMTMxLTMuNjIxMSAxMC4yNDZoMTUuNTM3bDMuNjIxMS0xMC4yNDYgMTEuNzE3LTMzLjE0OCAzOC4yMTEtMTA4LjF6IiBmaWxsPSIjNTFjOGZjIj48L3BhdGg+CiAgPC9nPgo8L3N2Zz4K&logoColor=51C8FC)](https://npmx.dev/package/@ghostry/extern)
 [![jsr](https://img.shields.io/badge/jsr-ffffff?style=for-the-badge&color=000000&logo=jsr&logoColor=F7DF1E)](https://jsr.io/@ghostry/extern)
 [![github](https://img.shields.io/badge/github-ffffff?style=for-the-badge&color=000000&logo=github&logoColor=ffffff)](https://github.com/pjrebsch/extern)
-![typescript](https://img.shields.io/badge/typescript-ffffff?style=for-the-badge&color=000000&logo=typescript&logoColor=3178C6)
-![bun](https://img.shields.io/badge/bun-ffffff?style=for-the-badge&color=000000&logo=bun&logoColor=FBF0DF)
-![node](https://img.shields.io/badge/node-ffffff?style=for-the-badge&color=000000&logo=nodedotjs&logoColor=5FA04E)
+[![typescript](https://img.shields.io/badge/typescript-ffffff?style=for-the-badge&color=000000&logo=typescript&logoColor=3178C6)](#)
+[![bun](https://img.shields.io/badge/bun-ffffff?style=for-the-badge&color=000000&logo=bun&logoColor=FBF0DF)](#)
+[![node](https://img.shields.io/badge/node-ffffff?style=for-the-badge&color=000000&logo=nodedotjs&logoColor=5FA04E)](#)
 
-# Example
+Provides the most seamless approach to typed dependency injection for test suites.
 
-## Initialization (`extern.ts`)
+## Example
+
+### Initialization (`extern.ts`)
 
 ```ts
 import { initialize } from "@ghostry/extern";
@@ -21,7 +22,7 @@ import { initialize } from "@ghostry/extern";
 export const extern = await initialize({});
 ```
 
-## Source (`source.ts`)
+### Source (`source.ts`)
 
 ```ts
 /**
@@ -95,7 +96,7 @@ const result = extern.validated
   .will(() => computeSomething("quick"));
 ```
 
-## Test (`test.ts`)
+### Test (`test.ts`)
 
 ```ts
 import { extern } from "./extern.ts";
@@ -163,7 +164,7 @@ test("example test", async () => {
 });
 ```
 
-# Philosophy
+## Philosophy
 
 This library was born from a philosophy of testing an application system in isolation, in contrast to testing it in the live context of other systems. In other words: "unit testing" individual systems of an application as opposed to "integration testing" the collection of them.
 
@@ -175,15 +176,15 @@ Of course, holistic, integrated, end-to-end testing does have its place, but mos
 
 One approach to achieve this would be traditional dependency injection. However, that often pollutes the interfaces of source code by altering function signatures or requiring unnatural abstractions to get an injection to where it needs to be. This library aims to provide dependency injection transparently with the minimal amount of "source code pollution" necessary.
 
-# API
+## API
 
 There are 2 primary APIs for wrapping code that works with external systems. Which one to use depends on whether the wrapped code will produce a value or not.
 
-## For code that produces a value
+### For code that produces a value
 
 If the source code block produces a value that must be substituted during tests, use `extern.validated` or `extern.typed`.
 
-### `validated` vs `typed`
+#### `validated` vs `typed`
 
 When wrapping a source code block, there are two modes available to determine how the provided identity is used.
 
@@ -193,7 +194,7 @@ Using `typed` will not invoke any runtime validation of the data returned by the
 
 Note that schemas can be used with `extern.typed`, but they will only function for validation of TypeScript types, not for data validation at runtime.
 
-### `by`
+#### `by`
 
 Determines the schema used for the extern block.
 
@@ -209,11 +210,11 @@ The exact same schema object should be available to both source code and tests s
 >
 > See https://typescript-eslint.io/rules/no-empty-object-type
 
-### `named`
+#### `named`
 
 Names the extern block for the sole purpose of disambiguating its mock in a test suite.
 
-### `given`
+#### `given`
 
 An extern block will usually need to reference parameters outside of itself to perform the desired external interaction. One way of making these references is to make a closure over outside variables:
 
@@ -252,7 +253,7 @@ await extern.testing((mock) => {
 });
 ```
 
-### `will`
+#### `will`
 
 Defines the extern block function to be executed according to the extern chain preceding it.
 
@@ -260,17 +261,17 @@ It will receive the `given` data as its only parameter.
 
 The return value is subject to the type defined by the associated schema and the mode defined in its extern chain.
 
-### Mocking requirements
+#### Mocking requirements
 
 Within `extern.testing()`, all value-producing `extern` blocks **must** be mocked. If such a block is used without a registered mock, an error will be thrown, even if the test would not otherwise fail. The expectation of this library is that no external interactions will actually occur during tests since testing scopes should be isolated for the sake of performance and reliability. If external interactions do need to occur during a test, the requirement can be disabled as necessary (as a later section covers).
 
 Also, any defined `mock` must end up being used by the end of the `extern.testing()` block, otherwise an `UnusedMocksError` will be thrown, even if the test would not otherwise fail. This prevents superfluous mocking that results in confusion about what setup is actually needed to run a test.
 
-### Schema requirements
+#### Schema requirements
 
 The schema used between an `extern` block and its corresponding `mock` must be the same JavaScript object (satisfying [`SameValueZero`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness#same-value-zero_equality) comparison). Therefore, the schema should be defined separately and exported in a way to be accessible to both the source code and tests.
 
-### Disambiguating mocks
+#### Disambiguating mocks
 
 If a test will be executing multiple external interactions that use the same schema definition within a single `extern.testing()` block, mock registration for that schema definition may need to be disambiguated. Without disambiguation, the same data will be used for all `extern` blocks using that schema.
 
@@ -301,7 +302,7 @@ mock(schema).named("abc").with(789);
 
 Registering more than one mock with the same disambiguation for the same schema will immediately throw an error.
 
-### Skipping mocks
+#### Skipping mocks
 
 In some tests, you may wish to run the original code instead of mocking it, but not defining a mock will throw an `UnusedMocksError`.
 
@@ -329,7 +330,7 @@ By default, source code wrapped with `extern.effect` will be skipped within `ext
 
 Outside of `extern.testing()`, the wrapped function runs normally as if `extern` were not involved.
 
-### `named`
+#### `named`
 
 Names the effect block so that it can be spied on in tests:
 
@@ -341,7 +342,7 @@ extern.effect
 
 Unnamed effect blocks cannot be observed in tests. They are always skipped within `extern.testing()` with no opportunity to inspect them.
 
-### `given`
+#### `given`
 
 As with value-producing blocks, `given` provides data to the block function from the extern chain instead of through a closure, which makes the data available for assertions in tests:
 
@@ -363,7 +364,7 @@ await extern.testing((mock) => {
 
 `given` is only available after `named`, since spying on the captured data requires that the block be identifiable.
 
-### `will`
+#### `will`
 
 Defines the effect block function to be executed according to the extern chain preceding it.
 
@@ -371,7 +372,7 @@ It will receive the `given` data as its only parameter.
 
 The return type must be `void` or `Promise<void>`.
 
-### Spying on effects
+#### Spying on effects
 
 Named effects can be observed during a test in one of two ways:
 

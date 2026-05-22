@@ -57,6 +57,7 @@ export namespace Spy {
   };
 
   export namespace Strategy {
+    /** The mock/spy strategy for a value block. */
     export namespace ForValue {
       /** The mock/spy strategy for a value block. */
       export type Any<$Out> = Substitute<$Out> | Passthrough;
@@ -73,6 +74,7 @@ export namespace Spy {
 
     /** The mock/spy strategy for an effect block. */
     export namespace ForEffect {
+      /** The mock/spy strategy for an effect block. */
       export type Any = Observe | Passthrough;
 
       /** Observation strategy for an effect block. */
