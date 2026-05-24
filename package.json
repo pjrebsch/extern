@@ -1,6 +1,6 @@
 {
   "name": "@ghostry/extern",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "license": "MIT",
   "description": "Dependency injection made seamless.",
   "keywords": [
