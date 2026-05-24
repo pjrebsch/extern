@@ -263,9 +263,9 @@ The return value is subject to the type defined by the associated schema and the
 
 #### Mocking requirements
 
-Within `extern.testing()`, all value-producing `extern` blocks **must** be mocked. If such a block is used without a registered mock, an error will be thrown, even if the test would not otherwise fail. The expectation of this library is that no external interactions will actually occur during tests since testing scopes should be isolated for the sake of performance and reliability. If external interactions do need to occur during a test, the requirement can be disabled as necessary (as a later section covers).
+Within `extern.testing()`, all value-producing `extern` blocks **must** be mocked. If such a block is used without a registered mock, an error will be thrown, even if the test would not otherwise fail. The expectation of this library is that no external interactions will actually occur during tests since testing scopes should be isolated for the sake of performance and reliability. If external interactions do need to occur during a test, the requirement can be disabled as necessary via `passthrough()` (as a later section covers).
 
-Also, any defined `mock` must end up being used by the end of the `extern.testing()` block, otherwise an `UnusedMocksError` will be thrown, even if the test would not otherwise fail. This prevents superfluous mocking that results in confusion about what setup is actually needed to run a test.
+Also, by default, any defined `mock` must end up being used by the end of the `extern.testing()` block, otherwise an `UnusedMocksError` will be thrown, even if the test would not otherwise fail. This prevents superfluous mocking that results in confusion about what setup is actually needed to run a test. To disable this requirement, pass an options object as the final argument for a mock registration to allow that particular mock to go unused: `{ unused: "allow" }`. This can be useful for asserting that the corresponding source code block did _not_ get executed.
 
 #### Schema requirements
 
@@ -316,7 +316,7 @@ mock(schema).skip();
 mock(schema).named("abc").skip();
 ```
 
-## For code that only performs an effect
+### For code that only performs an effect
 
 If the source code block does not produce a value, then wrapping it with `extern.effect` allows for a simpler integration.
 

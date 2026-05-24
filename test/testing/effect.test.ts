@@ -22,7 +22,7 @@ describe("`extern.testing`", async () => {
       const { example } = buildExample(extern);
 
       await extern.testing(async () => {
-        await expect(example()).resolves.toBeUndefined();
+        expect(example()).resolves.toBeUndefined();
       });
     });
 
@@ -30,18 +30,30 @@ describe("`extern.testing`", async () => {
       const { example, tracking } = buildExample(extern);
 
       await extern.testing(async () => {
-        await example();
+        example();
       });
 
       expect(tracking.runs).toBe(0);
     });
 
-    it("requires all spies to be used by the end of the block", async () => {
-      await expect(
+    it("requires all referenced effects to be used by the end of the block", async () => {
+      expect(
         extern.testing((mock) => {
           mock.effect.named("abc").observe();
         }),
       ).rejects.toThrowError(UnusedMocksError);
+    });
+
+    describe("with options", () => {
+      describe("`unused: 'allow'`", () => {
+        it("permits the mock to go unused by the end of the testing block", async () => {
+          expect(
+            extern.testing((mock) => {
+              mock.effect.named("abc").observe({ unused: "allow" });
+            }),
+          ).resolves.toBeUndefined();
+        });
+      });
     });
 
     describe("`passthrough()`", () => {
@@ -51,7 +63,7 @@ describe("`extern.testing`", async () => {
         await extern.testing(async (mock) => {
           mock.effect.named("abc").passthrough();
 
-          await example();
+          example();
         });
 
         expect(tracking.runs).toBe(1);
@@ -73,10 +85,10 @@ describe("`extern.testing`", async () => {
         const { example, tracking } = buildExample(extern);
 
         await extern.testing(async () => {
-          await example();
+          example();
         });
 
-        await example();
+        example();
 
         expect(tracking.runs).toBe(1);
       });
@@ -98,7 +110,7 @@ describe("`extern.testing`", async () => {
           expect(spy.named).toBe("abc");
           expect(spy.specificity).toBe(1);
 
-          await example();
+          example();
         });
       });
 
@@ -108,8 +120,8 @@ describe("`extern.testing`", async () => {
 
           const spy = mock.effect.named("abc").observe();
 
-          await example();
-          await example();
+          example();
+          example();
 
           expect(spy.executions).toMatchObject([
             { mode: "effect", named: "abc" },
@@ -127,7 +139,7 @@ describe("`extern.testing`", async () => {
 
           const spy = mock.effect.named("abc").observe();
 
-          await example(extern);
+          example(extern);
 
           expect(spy.executions.length).toBe(1);
           expect(spy.executions).toMatchObject([
@@ -138,7 +150,7 @@ describe("`extern.testing`", async () => {
 
       describe("when accessed more than once for the same name", () => {
         it("throws an error", async () => {
-          await expect(
+          expect(
             extern.testing((mock) => {
               const a = mock.effect.named("abc");
               const b = mock.effect.named("abc");
@@ -162,7 +174,7 @@ describe("`extern.testing`", async () => {
 
             expect(spy.strategy).toEqual({ kind: "passthrough" });
 
-            await example();
+            example();
           });
         });
 
@@ -172,8 +184,8 @@ describe("`extern.testing`", async () => {
 
             const spy = mock.effect.named("abc").passthrough();
 
-            await example();
-            await example();
+            example();
+            example();
 
             expect(spy.executions).toMatchObject([
               { mode: "effect", named: "abc" },

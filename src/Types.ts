@@ -12,6 +12,22 @@ export type Mode = "typed" | "validated" | "effect";
 
 export type Identity<$T = unknown> = StandardSchemaV1<$T> | T<$T>;
 
+/**
+ * Options to control some mocking behaviors.
+ */
+export interface Options {
+  /**
+   * Determines if an unused mock in an `extern.testing` block will throw
+   * an error or not.
+   *
+   * Allowing a mocks to go unused can be helpful to make assertions that
+   * certain source code paths (extern blocks) did *not* execute.
+   *
+   * @default "error"
+   */
+  unused?: "error" | "allow";
+}
+
 export namespace Disambiguation {
   type Base = { readonly named: string };
 

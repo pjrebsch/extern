@@ -1,6 +1,6 @@
 import { DuplicateMockError } from "./Error";
 import { IdentityMap, type Spy, type Spyable } from "./Spy";
-import { type Disambiguation, type Identity } from "./Types";
+import { type Disambiguation, type Identity, type Options } from "./Types";
 import { augmentFunction, callerStack } from "./Util";
 
 /**
@@ -50,6 +50,7 @@ export const mocking = () => {
     const $use = <$Strategy extends Spy.Strategy.ForValue.Any<$Out>>(
       disamb: Disambiguation.ForValue,
       strategy: $Strategy,
+      options: Options,
     ): Spy.ForValue<$Out, $Strategy> => {
       const exactlyMatches = exactly(disamb);
       const existing = spies.get(schema) ?? [];
@@ -64,6 +65,7 @@ export const mocking = () => {
         executions: [],
         stack: callerStack($use, 1),
         strategy,
+        options,
         kind: "value" as const,
       };
 
@@ -87,13 +89,15 @@ export const mocking = () => {
       return spy;
     };
 
-    const $substitute = (disamb: Disambiguation.ForValue) => (value: $Out) => {
-      return $use(disamb, { kind: "substitute", value });
-    };
+    const $substitute =
+      (disamb: Disambiguation.ForValue) => (value: $Out, options?: Options) => {
+        return $use(disamb, { kind: "substitute", value }, { ...options });
+      };
 
-    const $passthrough = (disamb: Disambiguation.ForValue) => () => {
-      return $use(disamb, { kind: "passthrough" });
-    };
+    const $passthrough =
+      (disamb: Disambiguation.ForValue) => (options?: Options) => {
+        return $use(disamb, { kind: "passthrough" }, { ...options });
+      };
 
     return {
       substitute: $substitute({}),
@@ -116,6 +120,7 @@ export const mocking = () => {
     const $use = <$Strategy extends Spy.Strategy.ForEffect.Any>(
       { named }: Disambiguation.ForEffect,
       strategy: $Strategy,
+      options: Options,
     ): Spy.ForEffect<$Strategy> => {
       const existing = spies.effects.get(named);
       if (existing) throw new DuplicateMockError();
@@ -126,6 +131,7 @@ export const mocking = () => {
         executions: [],
         stack: callerStack($use, 1),
         strategy,
+        options,
         kind: "effect" as const,
       };
 
@@ -134,11 +140,13 @@ export const mocking = () => {
       return spy;
     };
 
-    const $observe = (disamb: Disambiguation.ForEffect) => () =>
-      $use(disamb, { kind: "observe" });
+    const $observe =
+      (disamb: Disambiguation.ForEffect) => (options?: Options) =>
+        $use(disamb, { kind: "observe" }, { ...options });
 
-    const $passthrough = (disamb: Disambiguation.ForEffect) => () =>
-      $use(disamb, { kind: "passthrough" });
+    const $passthrough =
+      (disamb: Disambiguation.ForEffect) => (options?: Options) =>
+        $use(disamb, { kind: "passthrough" }, { ...options });
 
     return {
       named: (name: string) => ({

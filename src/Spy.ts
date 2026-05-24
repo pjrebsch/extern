@@ -1,4 +1,4 @@
-import type { Disambiguation, Identity, Mode, Name } from "./Types";
+import type { Disambiguation, Identity, Mode, Name, Options } from "./Types";
 
 /**
  * Information captured about each use of a mock during a testing block.
@@ -54,6 +54,7 @@ export namespace Spy {
     readonly specificity: number;
     readonly executions: Array<Execution>;
     readonly stack: string;
+    readonly options: Options;
   };
 
   export namespace Strategy {
@@ -115,12 +116,12 @@ export namespace Spyable {
 
     export type Substitute<$Out> = (
       value: $Out,
+      options?: Options,
     ) => Spy.ForValue<$Out, Spy.Strategy.ForValue.Substitute<$Out>>;
 
-    export type Passthrough<$Out> = () => Spy.ForValue<
-      $Out,
-      Spy.Strategy.ForValue.Passthrough
-    >;
+    export type Passthrough<$Out> = (
+      options?: Options,
+    ) => Spy.ForValue<$Out, Spy.Strategy.ForValue.Passthrough>;
   }
 
   export namespace ForEffect {
@@ -135,10 +136,13 @@ export namespace Spyable {
       };
     };
 
-    export type Observe = () => Spy.ForEffect<Spy.Strategy.ForEffect.Observe>;
+    export type Observe = (
+      options?: Options,
+    ) => Spy.ForEffect<Spy.Strategy.ForEffect.Observe>;
 
-    export type Passthrough =
-      () => Spy.ForEffect<Spy.Strategy.ForEffect.Passthrough>;
+    export type Passthrough = (
+      options?: Options,
+    ) => Spy.ForEffect<Spy.Strategy.ForEffect.Passthrough>;
   }
 }
 

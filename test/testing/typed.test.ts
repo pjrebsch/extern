@@ -34,11 +34,23 @@ describe("`extern.testing`", async () => {
       });
 
       it("requires all mocks to be used by the end of the block", async () => {
-        await expect(
+        expect(
           extern.testing((mock) => {
             mock(schema).with(987);
           }),
         ).rejects.toThrowError(UnusedMocksError);
+      });
+
+      describe("with options", () => {
+        describe("`unused: 'allow'`", () => {
+          it("permits the mock to go unused by the end of the testing block", async () => {
+            expect(
+              extern.testing((mock) => {
+                mock(schema).with(987, { unused: "allow" });
+              }),
+            ).resolves.toBeUndefined();
+          });
+        });
       });
 
       describe("`skip()`", () => {
@@ -93,7 +105,7 @@ describe("`extern.testing`", async () => {
             let unblock = () => {};
             const blocker = new Promise<void>((r) => (unblock = r));
 
-            await expect(
+            expect(
               Promise.all([
                 extern.testing(async (mock) => {
                   mock(schema).with(999);

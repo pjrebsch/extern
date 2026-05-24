@@ -7,6 +7,8 @@ import { validated, type Validated } from "./validated/index.ts";
 
 export type { Configuration } from "./Config.ts";
 
+export type { Options } from "./Types";
+
 export type { Execution, Spy } from "./Spy.ts";
 
 export type { Mocker } from "./Mocking.ts";
