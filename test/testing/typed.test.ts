@@ -192,6 +192,38 @@ describe("`extern.testing`", async () => {
             });
           });
         });
+
+        describe("`given()`", () => {
+          const example = (extern: Initialized) => {
+            return extern.typed
+              .by(schema)
+              .named("abc")
+              .given(10)
+              .will((v) => v);
+          };
+
+          it("matches a mock named the same, not a more general unnamed mock", async () => {
+            await extern.testing((mock) => {
+              mock(schema).named("abc").with(2);
+              mock(schema).with(9, { unused: "allow" });
+
+              expect(example(extern)).toBe(2);
+            });
+          });
+
+          it("records the block's name in the matched mock's executions", async () => {
+            await extern.testing((mock) => {
+              const spy = mock(schema).named("abc").with(2);
+              mock(schema).with(9, { unused: "allow" });
+
+              example(extern);
+
+              expect(spy.executions).toMatchObject([
+                { mode: "typed", given: 10, named: "abc" },
+              ]);
+            });
+          });
+        });
       });
 
       describe("a spy", () => {

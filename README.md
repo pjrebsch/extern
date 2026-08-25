@@ -5,6 +5,7 @@
 [![typescript](https://img.shields.io/badge/typescript-ffffff?style=for-the-badge&color=000000&logo=typescript&logoColor=3178C6)](#)
 [![bun](https://img.shields.io/badge/bun-ffffff?style=for-the-badge&color=000000&logo=bun&logoColor=FBF0DF)](#)
 [![node](https://img.shields.io/badge/node-ffffff?style=for-the-badge&color=000000&logo=nodedotjs&logoColor=5FA04E)](#)
+[![standardschema](https://img.shields.io/badge/standard%20schema-ffffff.svg?style=for-the-badge&color=000000&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAACb0lEQVR4Ae1bXUsbURA9s5uapPhRv0pBaet7KVhUpH/Bf+t7wRehUCm0gk9S2mIpKJFE4sfGZG/v+NC3uDvj5hLuzrzuPTvnnDm72SV36RCpQ40rqbH2B+lmgCWg5g7YJVDzAMASYAmouQONKvSTP0va9meiKs5W4hz+2XV0C7hhibUFS55kQGvdYWHLobnmQGlBp4oPuxGQ/SH0jgh3Z3rnSfsu8GI3x8K2H4W+dzWWeAq9L4TuZ939XIWafecnvzMF4tlCPwDmwpw0JTaAngGLH3NNr4limBNzk5bYgPZbh6QlbTP59cyJuUlLbMDMiryJlJR2vYab2AD+yZvW0nATGzCt4rW8zACtc7HgLAGxTFKrI9g9nZaaSN4vg+Yef1px3QHybx24q4FWkwgXxAB62UZj7zXQKL7i6NVzJBtzGO7/BJsx6SpmVAGDdHu1lPj/rZopkg8eE6CCGEBL8mdnvmRCVBADVK/MgV6zwxgQYpTKHmaA0rhoYJaAaEapFGIJUBoXDcwSEM0olUIsAUrjooFZAqIZpVKIJUBpXDQwS0A0o1QKsQQojYsGZgmIZpRKIZYApXHRwCwB0YxSKcQSoDQuGpglIJpRKoVYAqTGuUGg/62lxPx6p9hQIk5Adq5gFgiSncuHIzbg7jdh1BcqCrC9mDkxN2mJDeAvNS4PPEwgyl3fS3kBfcH3MJ4Lc2Ju0hIbwA1ufhA6n8o3zL9fynh5QaPjTikMi2YuzElT6m1y/RNC9jfF/GaO1huHxqxvP4ZDftoDEkKy6fcJzs+M5+mFu26G/OgC7uz60XVDjvwvwtXXBPfd8UuLjvwDwz2CtgCroKUAAAAASUVORK5CYII=)](https://standardschema.dev/schema)
 
 Provides the most seamless approach to typed dependency injection for test suites.
 

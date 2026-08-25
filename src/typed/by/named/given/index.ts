@@ -19,5 +19,5 @@ export const given =
   ): given<$Out, $Name> =>
   <const $In>(given: $In): Given<$Out, $Name, $In> => ({
     name,
-    will: will<$Out, $In>(config, identity, given),
+    will: will<$Out, $In>(config, identity, given, { named: name }),
   });
