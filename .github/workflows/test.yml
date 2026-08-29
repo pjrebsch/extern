@@ -30,7 +30,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: pkg
-          path: dist
+          path: pkg/extern/dist
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ inputs.build-run-id }}
           repository: ${{ github.repository }}

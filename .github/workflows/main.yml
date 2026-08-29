@@ -42,6 +42,7 @@ jobs:
 
       - name: Read package version
         id: read-version
+        working-directory: pkg/extern
         run: echo "version=v$(bunx --no-install npm view ./ version)" >> $GITHUB_OUTPUT
 
   check-release:

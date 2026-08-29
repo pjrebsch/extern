@@ -46,18 +46,19 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: pkg
-          path: dist
+          path: pkg/extern/dist
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ inputs.build-run-id }}
           repository: ${{ github.repository }}
 
       - name: Construct tarball path
         id: tarball-path
-        run: >
-          echo "path=${{ github.workspace }}/dist/${{ env.filename }}"
-          >> $GITHUB_OUTPUT
+        run: |
+          mkdir -p ${{ github.workspace }}/out
+          echo "path=${{ github.workspace }}/out/${{ env.filename }}" >> $GITHUB_OUTPUT
 
       - name: Pack
+        working-directory: pkg/extern
         run: bun pm pack --filename ${{ steps.tarball-path.outputs.path }}
 
       - name: Upload
@@ -86,7 +87,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.version }}.tgz
-          path: ${{ github.workspace }}/dist
+          path: ${{ github.workspace }}/out
           merge-multiple: true
 
       - name: Create release
@@ -97,7 +98,7 @@ jobs:
           target_commitish: ${{ github.ref }}
           prerelease: ${{ env.is-prerelease }}
           fail_on_unmatched_files: true
-          files: ${{ github.workspace }}/dist/*.tgz
+          files: ${{ github.workspace }}/out/*.tgz
 
   ##
   # https://docs.npmjs.com/generating-provenance-statements#example-github-actions-workflow
@@ -128,7 +129,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: ${{ env.filename }}
-          path: ${{ github.workspace }}/dist
+          path: ${{ github.workspace }}/out
           merge-multiple: true
 
       ##
@@ -144,7 +145,7 @@ jobs:
       - name: Publish
         run: >
           bunx --no-install npm publish
-          ${{ github.workspace }}/dist/${{ env.filename }}
+          ${{ github.workspace }}/out/${{ env.filename }}
           --tag ${{ env.is-prerelease == 'true' && 'experimental' || 'latest' }}
           --provenance
 
@@ -167,4 +168,5 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Publish
+        working-directory: pkg/extern
         run: bunx --no-install jsr publish

@@ -1,49 +1,19 @@
 {
-  "name": "@ghostry/extern",
-  "version": "0.0.12",
+  "name": "@ghostry/extern-monorepo",
+  "private": true,
   "license": "MIT",
-  "description": "Dependency injection made seamless.",
-  "keywords": [
-    "dependency injection",
-    "mock",
-    "spy",
-    "test",
-    "typescript"
+  "workspaces": [
+    "pkg/*"
   ],
-  "author": {
-    "name": "Patrick Rebsch"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/pjrebsch/extern"
-  },
-  "homepage": "https://github.com/pjrebsch/extern",
-  "bugs": "https://github.com/pjrebsch/extern/issues",
-  "type": "module",
-  "types": "./dist/types/index.d.ts",
-  "module": "./dist/esm/index.js",
-  "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "default": "./dist/esm/index.js"
-    }
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
+  "overrides": {
+    "@ghostry/extern": "workspace:*"
   },
   "scripts": {
-    "build:reset": "rm -rf ./dist",
-    "build:compile": "bunx --no-install --bun rslib build --config ./rslib.config.ts",
-    "build:clean": "find ./dist -type f -name '*.tsbuildinfo' -delete",
-    "build": "bun run build:reset && bun run build:compile && bun run build:clean",
-    "check": "tsc --noEmit",
-    "test": "bun run check && bun test"
+    "build": "bun --cwd=pkg/extern run build",
+    "check": "bun --cwd=pkg/extern run check",
+    "test": "bun --cwd=pkg/extern run test",
+    "format": "bunx --no-install prettier --write ."
   },
-  "files": [
-    "dist"
-  ],
   "devDependencies": {
     "@rslib/core": "^0.21.5",
     "@types/bun": "^1.3.14",

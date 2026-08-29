@@ -29,5 +29,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pkg
-          path: dist
+          path: pkg/extern/dist
           if-no-files-found: error
