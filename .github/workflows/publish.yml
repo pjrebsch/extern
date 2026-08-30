@@ -35,7 +35,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      filename: ${{ inputs.version }}.tgz
+      filename: ${{ inputs.package }}-${{ inputs.version }}.tgz
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -93,15 +93,15 @@ jobs:
       - name: Download
         uses: actions/download-artifact@v8
         with:
-          name: ${{ inputs.version }}.tgz
+          name: ${{ inputs.package }}-${{ inputs.version }}.tgz
           path: ${{ github.workspace }}/out
           merge-multiple: true
 
       - name: Create release
         uses: softprops/action-gh-release@v3
         with:
-          name: ${{ inputs.version }}
-          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.package }} ${{ inputs.version }}
+          tag_name: ${{ inputs.package }}/${{ inputs.version }}
           target_commitish: ${{ github.ref }}
           prerelease: ${{ env.is-prerelease }}
           fail_on_unmatched_files: true
@@ -118,7 +118,7 @@ jobs:
       id-token: write
     needs: [pack]
     env:
-      filename: ${{ inputs.version }}.tgz
+      filename: ${{ inputs.package }}-${{ inputs.version }}.tgz
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -150,6 +150,8 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
         run: >
           bunx --no-install npm publish
           ${{ github.workspace }}/out/${{ env.filename }}

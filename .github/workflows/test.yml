@@ -3,6 +3,14 @@ name: Test
 on:
   workflow_call:
     inputs:
+      package:
+        required: true
+        type: string
+        description: >-
+          The workspace directory under `pkg/` to test. Scoped per package
+          so that one package's failures cannot gate another's release —
+          `@ghostry/extern` in particular must not be held back by a package
+          that integrates a third-party library.
       build-run-id:
         required: true
         type: string
@@ -26,6 +34,11 @@ jobs:
       - name: Install Dependencies
         run: bun install --frozen-lockfile
 
+      ##
+      # Suites resolve their dependencies through built output rather than
+      # source, so `@ghostry/extern`'s `dist` has to be in place for any
+      # package's tests — its own included.
+      #
       - name: Download `@ghostry/extern`
         uses: actions/download-artifact@v8
         with:
@@ -35,14 +48,15 @@ jobs:
           run-id: ${{ inputs.build-run-id }}
           repository: ${{ github.repository }}
 
-      - name: Download `@ghostry/extern-extension-fabricator-v0`
+      - name: Download `@ghostry/${{ inputs.package }}`
+        if: inputs.package != 'extern'
         uses: actions/download-artifact@v8
         with:
-          name: pkg-extern-extension-fabricator-v0
-          path: pkg/extern-extension-fabricator-v0/dist
+          name: pkg-${{ inputs.package }}
+          path: pkg/${{ inputs.package }}/dist
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ inputs.build-run-id }}
           repository: ${{ github.repository }}
 
       - name: Test
-        run: bun run test
+        run: bun --cwd=pkg/${{ inputs.package }} run test

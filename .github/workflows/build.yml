@@ -2,6 +2,14 @@ name: Build
 
 on:
   workflow_call:
+    inputs:
+      package:
+        required: true
+        type: string
+        description: >-
+          The workspace directory under `pkg/` to build. One job per package,
+          so a package that fails to build blocks only its own test and publish
+          jobs rather than every package in the workspace.
     outputs:
       run-id:
         value: ${{ github.run_id }}
@@ -22,19 +30,31 @@ jobs:
       - name: Install Dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build
-        run: bun run build
-
-      - name: Upload `@ghostry/extern`
-        uses: actions/upload-artifact@v7
+      ##
+      # Every other package in this workspace resolves `@ghostry/extern`
+      # through its built `dist` rather than its source, so that output has to
+      # exist before one can even type-check. It is *downloaded*, never rebuilt
+      # here: extern is built exactly once per run, and every dependent job
+      # consumes that same artifact — so they cannot drift from each other, and
+      # the work is not repeated per package.
+      #
+      # No `run-id`: reusable workflows run as jobs inside the calling run, so
+      # this resolves against the current run by default and needs no
+      # `actions: read` permission. The caller orders it with `needs:`.
+      #
+      - name: Download `@ghostry/extern`
+        if: inputs.package != 'extern'
+        uses: actions/download-artifact@v8
         with:
           name: pkg-extern
           path: pkg/extern/dist
-          if-no-files-found: error
 
-      - name: Upload `@ghostry/extern-extension-fabricator-v0`
+      - name: Build
+        run: bun --cwd=pkg/${{ inputs.package }} run build
+
+      - name: Upload
         uses: actions/upload-artifact@v7
         with:
-          name: pkg-extern-extension-fabricator-v0
-          path: pkg/extern-extension-fabricator-v0/dist
+          name: pkg-${{ inputs.package }}
+          path: pkg/${{ inputs.package }}/dist
           if-no-files-found: error

@@ -6,19 +6,43 @@ on:
   workflow_call:
     outputs:
       build-run-id:
-        value: ${{ jobs.build.outputs.run-id }}
+        value: ${{ jobs.build-extern.outputs.run-id }}
 
+##
+# Every package builds and tests on a pull request — nothing is skipped here.
+# The per-package split matters on `main`, where it decides what can gate a
+# release; on a PR it just means a failure names the package it came from.
+#
 jobs:
-  build:
-    name: Build
+  build-extern:
+    name: Build `extern`
     uses: ./.github/workflows/build.yml
+    with:
+      package: extern
 
-  test:
-    name: Test
+  build-fabricator-extension:
+    name: Build `extern-extension-fabricator-v0`
+    uses: ./.github/workflows/build.yml
+    needs: [build-extern]
+    with:
+      package: extern-extension-fabricator-v0
+
+  test-extern:
+    name: Test `extern`
     uses: ./.github/workflows/test.yml
-    needs:
-      - build
+    needs: [build-extern]
     permissions:
       actions: read
     with:
-      build-run-id: ${{ needs.build.outputs.run-id }}
+      package: extern
+      build-run-id: ${{ needs.build-extern.outputs.run-id }}
+
+  test-extern-extension-fabricator-v0:
+    name: Test `extern-extension-fabricator-v0`
+    uses: ./.github/workflows/test.yml
+    needs: [build-extern, build-extern-extension-fabricator-v0]
+    permissions:
+      actions: read
+    with:
+      package: extern-extension-fabricator-v0
+      build-run-id: ${{ needs.build-extern-extension-fabricator-v0.outputs.run-id }}
