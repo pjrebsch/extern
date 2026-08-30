@@ -91,6 +91,55 @@ export class NotMockedError extends ExternError {
 }
 
 /**
+ * The error thrown when a block whose identity an extension claims would need
+ * to produce a value, but no extension able to produce it is available.
+ *
+ * Unreachable through the public types: `produce()` only appears on the
+ * interface `mock()` returns for identities an extension's lambda accepts,
+ * which requires that extension to have been passed to `initialize()` in the
+ * first place. A plain JavaScript consumer has no such guard, so this stays a
+ * real runtime error rather than an assertion.
+ */
+export class ExtensionUnavailableError extends ExternError {
+  constructor() {
+    super();
+    this.name = "ExtensionUnavailableError";
+    this.message =
+      "A block needed an extension to produce a value, but no configured "
+      + "extension recognizes its identity. Pass the extension to "
+      + "`initialize({ extensions: [...] })`, or provide an explicit mock "
+      + "for this block.";
+  }
+}
+
+/**
+ * The error thrown when more than one configured extension recognizes the
+ * same identity.
+ *
+ * Refused rather than resolved by order. When two lambdas both match an
+ * identity, TypeScript picks which one determines the block's type by its own
+ * inference-candidate selection — not by the order the extensions were passed
+ * in — so no runtime dispatch rule can be guaranteed to agree with the type
+ * the caller was handed. Erroring at the point of use is the only outcome
+ * that cannot silently disagree.
+ */
+export class AmbiguousIdentityError extends ExternError {
+  constructor(
+    /**
+     * The names of the extensions that each claimed the identity.
+     */
+    public readonly extensions: ReadonlyArray<string>,
+  ) {
+    super();
+    this.name = "AmbiguousIdentityError";
+    this.message =
+      `More than one extension recognizes this identity: `
+      + `${extensions.join(", ")}. Extensions must claim disjoint sets of `
+      + `identities — an overlap has no well-defined produced type.`;
+  }
+}
+
+/**
  * The error thrown at the end of an `extern.testing` block if there were
  * any mocks defined that were never used.
  */

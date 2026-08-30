@@ -1,13 +1,27 @@
 import { DuplicateMockError } from "./Error";
+import type { TypeLambda } from "./Extension";
 import { IdentityMap, type Spy, type Spyable } from "./Spy";
-import { type Disambiguation, type Identity, type Options } from "./Types";
+import {
+  type AnyIdentity,
+  type Disambiguation,
+  type Identity,
+  type Options,
+} from "./Types";
 import { augmentFunction, callerStack } from "./Util";
 
 /**
  * The function used to build a mock in a testing block.
+ *
+ * One signature, not an overload: {@link Spyable} discriminates on the
+ * identity's own type and recovers the produced type in the same step, so an
+ * identity an extension can produce from gets the richer interface — the one
+ * that additionally offers `produce()` — without a second declaration whose
+ * parameter has to be narrowed by hand.
  */
-export type Mocker = {
-  <$Out>(schema: Identity<$Out>): Spyable.ForValue.Interface<$Out>;
+export type Mocker<$Lambda extends TypeLambda = never> = {
+  <$Identity extends Identity<any, $Lambda>>(
+    schema: $Identity,
+  ): Spyable<$Identity, $Lambda>;
 
   /**
    * The interface used to spy on effect blocks.
@@ -44,9 +58,21 @@ const Specificity = { named: 0b1, none: 0b0 } as const;
 export const mocking = () => {
   const spies = IdentityMap.build();
 
+  /**
+   * Always builds the richer, producible-shaped interface — `produce()` is
+   * present on every returned object at runtime, in its widest form. Which of
+   * the two is actually *offered* to a caller is a purely type-level decision
+   * made by {@link Spyable}: there is no runtime check that could tell an
+   * extension's schema from a Standard Schema here without duplicating the
+   * extension's own `supports`, and no need to, since calling `produce()` on a
+   * non-producible identity is already unreachable through the public types
+   * and lands on `ExtensionUnavailableError` for an untyped JavaScript caller
+   * anyway. The same goes for the callback form against a handle-less
+   * extension: the extension simply ignores it.
+   */
   const forValue = <$Out>(
-    schema: Identity<$Out>,
-  ): Spyable.ForValue.Interface<$Out> => {
+    schema: AnyIdentity,
+  ): Spyable.ForValue.Producible.Interface<$Out, unknown> => {
     const $use = <$Strategy extends Spy.Strategy.ForValue.Any<$Out>>(
       disamb: Disambiguation.ForValue,
       strategy: $Strategy,
@@ -99,6 +125,26 @@ export const mocking = () => {
         return $use(disamb, { kind: "passthrough" }, { ...options });
       };
 
+    const $produce =
+      (disamb: Disambiguation.ForValue) =>
+      (
+        first?: ((context: { readonly via: never }) => $Out) | Options,
+        second?: Options,
+      ) => {
+        const [fn, options] =
+          typeof first === "function" ? [first, second] : [undefined, first];
+
+        const strategy =
+          fn ?
+            ({
+              kind: "produce",
+              using: (handle: unknown) => fn({ via: handle as never }),
+            } as const)
+          : ({ kind: "produce" } as const);
+
+        return $use(disamb, strategy, { ...options });
+      };
+
     return {
       substitute: $substitute({}),
       with: $substitute({}),
@@ -106,12 +152,16 @@ export const mocking = () => {
       passthrough: $passthrough({}),
       skip: $passthrough({}),
 
+      produce: $produce({}),
+
       named: (name: string) => ({
         substitute: $substitute({ named: name }),
         with: $substitute({ named: name }),
 
         passthrough: $passthrough({ named: name }),
         skip: $passthrough({ named: name }),
+
+        produce: $produce({ named: name }),
       }),
     };
   };
@@ -156,7 +206,18 @@ export const mocking = () => {
     };
   };
 
-  const mock: Mocker = augmentFunction(forValue, { effect: forEffect() });
+  /**
+   * Cast, unavoidably: `forValue` has one concrete return type, while
+   * `Mocker`'s is the conditional {@link Spyable}, and TypeScript cannot
+   * relate a concrete type to a conditional one whose checked type is still
+   * generic.
+   *
+   * Sound because `forValue` always builds the *widest* shape: every branch
+   * of `Spyable` is a subset of the producible interface it returns.
+   */
+  const mock = augmentFunction(forValue, {
+    effect: forEffect(),
+  }) as unknown as Mocker<TypeLambda>;
 
   return { mock, spies };
 };

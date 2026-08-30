@@ -1,5 +1,5 @@
 import type { Config } from "../../../../Config";
-import type { Identity, Promisable, Promised } from "../../../../Types";
+import type { AnyIdentity, Promisable, Promised } from "../../../../Types";
 import { will as $will } from "../../../Core";
 
 export type will<$Out, $In> = <$O extends Promisable<$Out>>(
@@ -9,7 +9,7 @@ export type will<$Out, $In> = <$O extends Promisable<$Out>>(
 export const will =
   <$Out, $In>(
     config: Config,
-    identity: Identity<$Out>,
+    identity: AnyIdentity,
     given: $In,
   ): will<$Out, $In> =>
   <$O extends Promisable<$Out>>(fn: (given: $In) => $O): Promised<$Out, $O> => {

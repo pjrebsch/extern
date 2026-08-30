@@ -1,5 +1,5 @@
 import type { Config } from "../../../../Config";
-import type { Identity, Name } from "../../../../Types";
+import type { AnyIdentity, Name } from "../../../../Types";
 import { will } from "./will";
 
 export interface Given<$Out, $Name extends Name, $In> {
@@ -14,7 +14,7 @@ export type given<$Out, $Name extends Name> = <const $In>(
 export const given =
   <$Out, $Name extends Name>(
     config: Config,
-    identity: Identity<$Out>,
+    identity: AnyIdentity,
     name: $Name,
   ): given<$Out, $Name> =>
   <const $In>(given: $In): Given<$Out, $Name, $In> => ({

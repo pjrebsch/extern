@@ -1,7 +1,7 @@
 import type { Config } from "../../../../../Config";
 import type {
   Disambiguation,
-  Identity,
+  AnyIdentity,
   Promisable,
   Promised,
 } from "../../../../../Types";
@@ -14,7 +14,7 @@ export type will<$Out, $In> = <$O extends Promisable<$Out>>(
 export const will =
   <$Out, $In>(
     config: Config,
-    identity: Identity<$Out>,
+    identity: AnyIdentity,
     given: $In,
     disamb: Disambiguation.ForValue,
   ): will<$Out, $In> =>

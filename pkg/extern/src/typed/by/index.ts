@@ -1,5 +1,5 @@
 import type { Config } from "../../Config";
-import type { Identity } from "../../Types";
+import type { AnyIdentity } from "../../Types";
 import { given } from "./given";
 import { named } from "./named";
 import { will } from "./will";
@@ -12,7 +12,7 @@ export interface By<$Out> {
 
 export const by =
   (config: Config) =>
-  <$Out>(identity: Identity<$Out>): By<$Out> => ({
+  <$Out>(identity: AnyIdentity): By<$Out> => ({
     named: named<$Out>(config, identity),
     given: given<$Out>(config, identity),
     will: will<$Out>(config, identity),
