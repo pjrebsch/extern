@@ -6,6 +6,7 @@
 [![bun](https://img.shields.io/badge/bun-ffffff?style=for-the-badge&color=000000&logo=bun&logoColor=FBF0DF)](#)
 [![node](https://img.shields.io/badge/node-ffffff?style=for-the-badge&color=000000&logo=nodedotjs&logoColor=5FA04E)](#)
 [![standardschema](https://img.shields.io/badge/standard%20schema-ffffff.svg?style=for-the-badge&color=000000&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAACb0lEQVR4Ae1bXUsbURA9s5uapPhRv0pBaet7KVhUpH/Bf+t7wRehUCm0gk9S2mIpKJFE4sfGZG/v+NC3uDvj5hLuzrzuPTvnnDm72SV36RCpQ40rqbH2B+lmgCWg5g7YJVDzAMASYAmouQONKvSTP0va9meiKs5W4hz+2XV0C7hhibUFS55kQGvdYWHLobnmQGlBp4oPuxGQ/SH0jgh3Z3rnSfsu8GI3x8K2H4W+dzWWeAq9L4TuZ939XIWafecnvzMF4tlCPwDmwpw0JTaAngGLH3NNr4limBNzk5bYgPZbh6QlbTP59cyJuUlLbMDMiryJlJR2vYab2AD+yZvW0nATGzCt4rW8zACtc7HgLAGxTFKrI9g9nZaaSN4vg+Yef1px3QHybx24q4FWkwgXxAB62UZj7zXQKL7i6NVzJBtzGO7/BJsx6SpmVAGDdHu1lPj/rZopkg8eE6CCGEBL8mdnvmRCVBADVK/MgV6zwxgQYpTKHmaA0rhoYJaAaEapFGIJUBoXDcwSEM0olUIsAUrjooFZAqIZpVKIJUBpXDQwS0A0o1QKsQQojYsGZgmIZpRKIZYApXHRwCwB0YxSKcQSoDQuGpglIJpRKoVYAqTGuUGg/62lxPx6p9hQIk5Adq5gFgiSncuHIzbg7jdh1BcqCrC9mDkxN2mJDeAvNS4PPEwgyl3fS3kBfcH3MJ4Lc2Ju0hIbwA1ufhA6n8o3zL9fynh5QaPjTikMi2YuzElT6m1y/RNC9jfF/GaO1huHxqxvP4ZDftoDEkKy6fcJzs+M5+mFu26G/OgC7uz60XVDjvwvwtXXBPfd8UuLjvwDwz2CtgCroKUAAAAASUVORK5CYII=)](https://standardschema.dev/schema)
+[![fabricator](https://img.shields.io/badge/fabricator-ffffff.svg?style=for-the-badge&color=000000&logo=data:image/webp;base64,UklGRowDAABXRUJQVlA4WAoAAAAQAAAAPwAAPwAAQUxQSNwBAAABkEPbtqk9J7Zt27ZTpbJtO5VtO6ls27ZTObWd/MYde4yH+845N2gjwpHbtoFEVzO7e57ZRxB/mU8laCymo6Az0FhKT34ZT7juiE79/+eZwfzSH9BpuKB9f0Ym5suPJGeZB9NaF0xPlLX60FNJLjpTl2wrvjqB01hRCQMpahXvaLYDCe05j9FqzTCQWKvd0Lrqss6QwmSZuo7DPYel3QbPVIdtha+x60xux+FXWk/DWd48M2bNmtXYqugs5ibbwgfyjIc3TwqAyValwdwnW/gkk9lwpd2MsLj0Imm/ca23vlIFReg5Vwpsay1zRcNUmV0aTsks1xCTVWSkBnQlypjTmyent4x29VWck/0zxGgwVUXnlAbsEhmsIqW2RM6YsDsCuJFWctaGHOgtgdESBb8FvMxpNT9aXHXJ6ZAEIKYq2SykaHibX3LavgV6ks1C4sCtrKKHr3lb8ljiwZXsJF3XcFx4VFSqeyg+fGgrNDWYBMz6nCJnAtkwfxyanq9yip8Y8HZoZqbMd/w0AJ+WVubIe8FPCWCezWqY3i7ryHd+dvL9uLJ8YMuKBXPnL9967IEf8IugNmN7WRyxFcVBkfSLph6DdhzKsejGoxqTZlyKsenF5zr69EVl84mPAFZQOCCKAQAAsAsAnQEqQABAAD5hKo5FpCKhGv0WZEAGBLUAYP/7gbvkuL65RvkG0wb2ZvgH6Aehz+13WLPqoQLa5eoH2Va0EHUQ/4czFkGwHS1SADsG8YDH+DGIlFsrT2A2+qL95tOXN3WO6xIgAP7/COd/iBE/1l1T3wLGwB7vowaGH/lgWszIvnQUa7e5OGkvv280QsKCFFB84D4r+/uv60aIIHb0dn/3j+hZ6mkFgU/k4HuICwQ+n+OJPEZ0dP6Q6+shjs++1qiZ2gFXsIAOPvZ9lYhqYPmhfimHM3bb7i06blY/03VRs+XiBWbNShspo9f4N3//SdqyVvNPeb16avu0c8dc6rfwAylJQQs22odpaJv8aTJrXxZ16sO0x/hpUXyrYdHZVeeVJQXJk9hVQhTtCxR6hB9hqwG4vRMMfD6oj5nrEy/iUJCQzwz46+7c+5AAJ/1zDyIu2t08f2MnDNYuseBc4j15PhAFLyoAvWcfQzuAa1hwaa7NxsYP/8FPVf8hrBhhH1boCvkwbgAAAA==)](https://docs.ghostry.dev/fabricator/)
 
 Provides the most seamless approach to typed dependency injection for test suites.
 
@@ -391,3 +392,154 @@ const spy = mock.effect.named("track view").passthrough();
 ```
 
 Each returns a spy whose `executions` array records every call to the matching effect block, with any `given` data attached. As with value-producing mocks, a registered effect spy must be exercised at least once before the `extern.testing()` block ends, otherwise an `UnusedMocksError` will be thrown.
+
+## Extensions
+
+An extension widens what **one instance** accepts as a block identity, so that a
+block built from another library's schema can produce its own value rather than
+requiring a mock.
+
+```ts
+import { fabricatorExtension } from "@ghostry/extern-extension-fabricator-v0";
+
+export const extern = await initialize({
+  extensions: [fabricatorExtension({ instance: fabricator })],
+});
+```
+
+The widening is **per instance, not global**. An `initialize()` elsewhere in the
+same project that was given no extensions still rejects those schemas, exactly
+as before. Extensions compose by appending to the list — nothing else is needed
+to combine two.
+
+Inside a testing block, an identity an extension claims gains one extra
+terminal:
+
+```ts
+await extern.testing((mock) => {
+  mock(user).produce();
+  mock(user)
+    .named("admin")
+    .produce(({ via }) => via.fabricate({ role: "admin" }));
+});
+```
+
+`produce()` lets the extension decide the value; the callback form hands you the
+extension's own object for that identity — `via` — so overrides are expressed in
+_that library's_ vocabulary rather than anything extern models. Both forms cache
+per `(identity, name)`, so reading a block twice in one test agrees and the
+callback runs once.
+
+### Writing an extension
+
+An `Extension` is one of two variants, discriminated by `kind`.
+
+A **producer** claims identities and must serve them:
+
+```ts
+import type { Extension, TypeLambda } from "@ghostry/extern";
+
+interface MyLambda extends TypeLambda {
+  readonly Out: MySchema<this["In"]>;
+}
+
+const myExtension = (): Extension<MyLambda> => ({
+  kind: "producer",
+  name: "my-library",
+
+  supports: (identity) => isMySchema(identity),
+
+  scope: (options, block) =>
+    block({ produce: (identity, named) => buildFrom(identity, named) }),
+});
+```
+
+An **observer** claims nothing and only wants a scope per testing block — a
+debugging helper recording which blocks ran, say. It contributes no lambda, so
+`Identity` is unwidened and every block behaves exactly as it would with no
+extension configured:
+
+```ts
+const recorder = (): Extension => ({
+  kind: "observer",
+  name: "recorder",
+  scope: async (options, block) => {
+    const finish = startRecording();
+    try {
+      return await block({});
+    } finally {
+      finish();
+    }
+  },
+});
+```
+
+`Extension<SomeLambda>` _is_ `Extension.Producer<SomeLambda>`, and a bare
+`Extension` _is_ `Extension.Observer`. Neither admits the other: a producer
+without `supports`, an `unmocked` on an observer, or a producer whose session
+carries no `produce` are all type-level compile errors rather than runtime surprises.
+
+`scope` runs once per `extern.testing()` block, for every extension. Its
+`options.ignore` carries extern's own source roots — an extension that resolves
+the calling test file from a stack must skip these **in addition to** its own
+frames, since the stack reads _your library → your extension → extern → the
+test_.
+
+### Type lambdas
+
+`Identity` is widened by a type-level function, encoded with the `this`-type
+trick: `Apply` intersects a concrete `In` onto the lambda and reads `Out` back.
+A union of lambdas composes for free, which is what makes several extensions
+work together with no combinator.
+
+Three authoring rules, each established by compiling against real schema types:
+
+1. **`this["In"]` must pass through a named generic alias.**
+   `MySchema<this["In"]>` resolves; `{ produces?: this["In"] }` does not.
+
+2. **`Out` must be structurally narrow**, keyed on a nominal marker your own
+   values carry. A shape as loose as `{ build: () => this["In"] }` accepts any
+   object with a same-named method, silently claiming identities that were never
+   yours. Intersect your library's branded symbols instead.
+
+3. **Overlapping lambdas are unsupported.** If two extensions both match one
+   identity, TypeScript picks the produced type by its own inference-candidate
+   selection regardless of the order you list them in, so no runtime
+   dispatch can be made to agree with the type the caller was handed. Extern
+   counts matches rather than immediately taking the first, and throws
+   `AmbiguousIdentityError` naming the extensions when multiple match.
+
+### Offering `produce(({ via }) => ...)`
+
+The callback form appears only if your lambda also extends `HandleLambda`, a
+second, independent pair mapping a concrete identity to what its callback
+receives:
+
+```ts
+interface MyLambda extends TypeLambda, HandleLambda {
+  readonly Out: MySchema<this["In"]>;
+  readonly Handle: MyBuilderFor<this["Of"]>;
+}
+```
+
+It is a separate interface rather than two more slots on `TypeLambda` for a
+concrete reason: an interface member is inherited whether or not you redeclare
+it, so a `Handle` on the base would land on every lambda including handle-less
+ones — and `MyBuilder | unknown` is `unknown`, which would collapse `via` to
+`unknown` for every identity as soon as one observer-style extension was
+configured alongside yours.
+
+Only your extension can construct a handle, so extern routes the caller's
+callback to you rather than invoking it itself. `produce` receives it as a third
+argument:
+
+```ts
+produce: (identity, named, using) => {
+  const built = buildFrom(identity, named);
+  return using === undefined ? built.value() : using(built);
+},
+```
+
+An extension with no handle simply ignores `using`; leaving `Handle` undeclared
+withdraws the callback form from your identities while leaving `produce()`
+itself in place.
