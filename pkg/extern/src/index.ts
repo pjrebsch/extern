@@ -27,13 +27,14 @@ export type { Mocker } from "./Mocking.ts";
 
 export { T } from "./T.ts";
 
-export type {
+export {
   AmbiguousIdentityError,
   DuplicateMockError,
   ExtensionUnavailableError,
   ExternError,
   IllegalConcurrencyTestingError,
   InvalidDataTypeError,
+  InvalidSchemaError,
   NotMockedError,
   UnusedMocksError,
 } from "./Error.ts";

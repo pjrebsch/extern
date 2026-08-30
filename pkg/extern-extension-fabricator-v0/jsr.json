@@ -1,0 +1,6 @@
+{
+  "name": "@ghostry/extern-extension-fabricator-v0",
+  "version": "0.0.1",
+  "exports": "./src/index.ts",
+  "publish": { "exclude": ["test"] }
+}

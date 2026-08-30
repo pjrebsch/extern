@@ -25,9 +25,16 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Upload
+      - name: Upload `@ghostry/extern`
         uses: actions/upload-artifact@v7
         with:
-          name: pkg
+          name: pkg-extern
           path: pkg/extern/dist
+          if-no-files-found: error
+
+      - name: Upload `@ghostry/extern-extension-fabricator-v0`
+        uses: actions/upload-artifact@v7
+        with:
+          name: pkg-extern-extension-fabricator-v0
+          path: pkg/extern-extension-fabricator-v0/dist
           if-no-files-found: error

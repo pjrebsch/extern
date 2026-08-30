@@ -78,6 +78,13 @@ jobs:
       contents: write
       id-token: write
     with:
+      ##
+      # `extern` alone for now. `publish.yml` is parameterized per package, so
+      # adding the fabricator extension is a second `uses:` job — but its
+      # release tag would collide with this one's `vX.Y.Z` scheme, which the
+      # existing releases already use. That naming decision comes first.
+      #
+      package: extern
       version: ${{ needs.get-version.outputs.version }}
       build-run-id: ${{ needs.build.outputs.run-id }}
     secrets:

@@ -1,0 +1,56 @@
+{
+  "name": "@ghostry/extern-extension-fabricator-v0",
+  "version": "0.0.1",
+  "license": "MIT",
+  "description": "@ghostry/fabricator integration for @ghostry/extern — a typed extern block built from a fabricator schema produces its own value instead of requiring a mock.",
+  "keywords": [
+    "dependency injection",
+    "extension",
+    "fabricator",
+    "mock",
+    "test",
+    "typescript"
+  ],
+  "author": {
+    "name": "Patrick Rebsch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pjrebsch/extern",
+    "directory": "pkg/extern-extension-fabricator-v0"
+  },
+  "homepage": "https://github.com/pjrebsch/extern",
+  "bugs": "https://github.com/pjrebsch/extern/issues",
+  "type": "module",
+  "types": "./dist/types/index.d.ts",
+  "module": "./dist/esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build:reset": "rm -rf ./dist",
+    "build:compile": "bunx --no-install --bun rslib build --config ./rslib.config.ts",
+    "build:clean": "find ./dist -type f -name '*.tsbuildinfo' -delete",
+    "build": "bun run build:reset && bun run build:compile && bun run build:clean",
+    "check": "tsc --noEmit",
+    "test": "bun run check && bun test"
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "@ghostry/extern": ">=0.0.13 <0.1.0",
+    "@ghostry/fabricator": ">=0.0.2 <0.1.0"
+  },
+  "devDependencies": {
+    "@ghostry/extern": "workspace:*"
+  }
+}

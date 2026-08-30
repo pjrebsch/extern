@@ -9,9 +9,9 @@
     "@ghostry/extern": "workspace:*"
   },
   "scripts": {
-    "build": "bun --cwd=pkg/extern run build",
-    "check": "bun --cwd=pkg/extern run check",
-    "test": "bun --cwd=pkg/extern run test",
+    "build": "bun --cwd=pkg/extern run build && bun --cwd=pkg/extern-extension-fabricator-v0 run build",
+    "check": "bun --cwd=pkg/extern run check && bun --cwd=pkg/extern-extension-fabricator-v0 run check",
+    "test": "bun --cwd=pkg/extern run test && bun --cwd=pkg/extern-extension-fabricator-v0 run test",
     "format": "bunx --no-install prettier --write ."
   },
   "devDependencies": {

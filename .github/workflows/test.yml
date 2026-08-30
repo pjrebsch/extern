@@ -26,11 +26,20 @@ jobs:
       - name: Install Dependencies
         run: bun install --frozen-lockfile
 
-      - name: Download the build
+      - name: Download `@ghostry/extern`
         uses: actions/download-artifact@v8
         with:
-          name: pkg
+          name: pkg-extern
           path: pkg/extern/dist
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.build-run-id }}
+          repository: ${{ github.repository }}
+
+      - name: Download `@ghostry/extern-extension-fabricator-v0`
+        uses: actions/download-artifact@v8
+        with:
+          name: pkg-extern-extension-fabricator-v0
+          path: pkg/extern-extension-fabricator-v0/dist
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ inputs.build-run-id }}
           repository: ${{ github.repository }}

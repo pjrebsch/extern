@@ -167,14 +167,14 @@ export namespace Extension {
   export interface Producer<
     $Lambda extends TypeLambda = TypeLambda,
   > extends Base {
-    readonly kind: "producer";
+    readonly "kind": "producer";
 
     /**
      * Phantom, never read at runtime — the sole carrier of `$Lambda`, which
      * is what lets `initialize` infer it from the value a caller passes
      * rather than requiring an explicit type argument.
      */
-    readonly '~lambda'?: $Lambda;
+    readonly "~lambda"?: $Lambda;
 
     /**
      * Does this extension recognize `identity` as something it can produce?
@@ -183,7 +183,7 @@ export namespace Extension {
      * one the lambda accepts, and vice versa. Where they disagree, the type
      * level and the runtime disagree about which blocks are producible.
      */
-    readonly supports: (identity: unknown) => boolean;
+    readonly "supports": (identity: unknown) => boolean;
 
     /**
      * What a block that this extension claims does when it has no matching
@@ -194,7 +194,7 @@ export namespace Extension {
      *
      * @default "produce"
      */
-    readonly unmocked?: "produce" | "error";
+    readonly "unmocked"?: "produce" | "error";
 
     /**
      * Open one scope per `extern.testing` block, and run `block` inside it —
@@ -204,7 +204,7 @@ export namespace Extension {
      * The session must carry a `produce`: claiming identities and serving
      * none is the contract violation this variant exists to rule out.
      */
-    readonly scope: <$Return>(
+    readonly "scope": <$Return>(
       options: ScopeOptions,
       block: (session: Session.Producer) => Promise<$Return>,
     ) => Promise<$Return>;
