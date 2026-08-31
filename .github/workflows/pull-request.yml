@@ -20,7 +20,7 @@ jobs:
     with:
       package: extern
 
-  build-fabricator-extension:
+  build-extern-extension-fabricator-v0:
     name: Build `extern-extension-fabricator-v0`
     uses: ./.github/workflows/build.yml
     needs: [build-extern]
