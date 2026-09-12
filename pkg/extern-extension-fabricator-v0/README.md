@@ -109,7 +109,15 @@ constant layer is what keeps those two streams disjoint: a fabrication either
 side of a testing block can never collide with one inside it, at any ordinal.
 
 Two blocks over one schema in one test are a single production. Give them
-`named(...)` to make them distinct; that name layers onto the salt.
+`named(...)` to make them distinct.
+
+A name does more than disambiguate. It lifts a block out of positional identity
+altogether: a named block's value is a function of its identity and its name,
+and of nothing else — so it holds still against whatever else the test
+fabricates ahead of it. Add a second fixture above it, or a helper that
+fabricates on its way past, and a named block keeps its value where an unnamed
+one moves. That is the trade the two forms make, and it is why the bullet above
+is scoped to unnamed values.
 
 ### With a test harness
 

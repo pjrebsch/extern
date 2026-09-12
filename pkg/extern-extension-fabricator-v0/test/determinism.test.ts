@@ -118,38 +118,111 @@ describe("the production cache", () => {
   });
 });
 
+describe("a named block", () => {
+  /**
+   * Keyed by its own identity and name, and by nothing else. A name is the
+   * whole mechanism for lifting a block out of positional identity, so work
+   * done ahead of it inside the same scope must not move it — a second fixture
+   * added to a test, a helper that fabricates on the way past.
+   *
+   * This is the test that would have caught the ordinal leaking into a named
+   * block's trace. Every other determinism case here reads its block first, or
+   * reads it in a scope of its own, so all of them held while this did not.
+   */
+  it("is unperturbed by draws that precede it in the same block", async () => {
+    let alone: Id | undefined;
+    let preceded: Id | undefined;
+
+    await extern.testing(() => void (alone = named("alice")));
+
+    await extern.testing(() => {
+      new fabricator.Fabricator(other).fabricate();
+      new fabricator.Fabricator(other).fabricate();
+
+      preceded = named("alice");
+    });
+
+    expect(alone).toBeDefined();
+    expect(alone).toEqual(preceded!);
+  });
+
+  /**
+   * The contrast, and the reason the pin is scoped to named blocks alone.
+   * Construction order is all that distinguishes two unnamed blocks, so it has
+   * to keep moving their values — this is the documented behavior the name is
+   * an opt-out *from*, not an inconsistency with the case above.
+   */
+  it("leaves an unnamed block positional", async () => {
+    let alone: Id | undefined;
+    let preceded: Id | undefined;
+
+    await extern.testing(() => void (alone = block()));
+
+    await extern.testing(() => {
+      new fabricator.Fabricator(other).fabricate();
+
+      preceded = block();
+    });
+
+    expect(alone).toBeDefined();
+    expect(alone).not.toEqual(preceded!);
+  });
+});
+
 describe("concurrency", () => {
   /**
-   * Two named blocks resolved under `Promise.all`. Their values must depend on
-   * their names, not on the order they happen to settle in — otherwise a
+   * Two named blocks resolved under `Promise.all`, constructed in one order on
+   * the first run and the opposite order on the second. Their values must
+   * depend on their names, not on the order they settle in — otherwise a
    * suite's data would shift with scheduling.
+   *
+   * The reversal is the whole test. Running one schedule twice establishes
+   * nothing: two runs of identical code settle identically, so an
+   * order-dependent value agrees with itself and passes. `settled` is asserted
+   * against both orders for that reason — if the two schedules ever converge
+   * again the test fails on the premise, rather than quietly going back to
+   * passing for free.
    */
   it("keeps named blocks stable regardless of settle order", async () => {
-    const run = async (): Promise<[Id, Id]> => {
-      let a: Id | undefined;
-      let b: Id | undefined;
+    const run = async (
+      goesFirst: "alpha" | "beta",
+    ): Promise<{
+      readonly alpha: Id;
+      readonly beta: Id;
+      readonly settled: ReadonlyArray<string>;
+    }> => {
+      const settled: string[] = [];
+      let alpha: Id | undefined;
+      let beta: Id | undefined;
+
+      /** Yields a microtask unless this is the one meant to construct first. */
+      const draw = async (name: "alpha" | "beta"): Promise<void> => {
+        if (name !== goesFirst) await Promise.resolve();
+
+        settled.push(name);
+
+        if (name === "alpha") alpha = named(name);
+        else beta = named(name);
+      };
 
       await extern.testing(async () => {
-        const [x, y] = await Promise.all([
-          (async () => {
-            await Promise.resolve();
-            return named("alpha");
-          })(),
-          (async () => named("beta"))(),
-        ]);
-        a = x;
-        b = y;
+        await Promise.all([draw("alpha"), draw("beta")]);
       });
 
-      return [a!, b!];
+      return { alpha: alpha!, beta: beta!, settled };
     };
 
-    const first = await run();
-    const second = await run();
+    const forwards = await run("alpha");
+    const backwards = await run("beta");
 
-    expect(first[0]).toEqual(second[0]);
-    expect(first[1]).toEqual(second[1]);
-    expect(first[0]).not.toEqual(first[1]);
+    // The premise: these two runs really did construct in opposite orders.
+    expect(forwards.settled).toEqual(["alpha", "beta"]);
+    expect(backwards.settled).toEqual(["beta", "alpha"]);
+
+    // The claim: neither value moved when the order reversed.
+    expect(forwards.alpha).toEqual(backwards.alpha);
+    expect(forwards.beta).toEqual(backwards.beta);
+    expect(forwards.alpha).not.toEqual(forwards.beta);
   });
 });
 

@@ -109,7 +109,20 @@ const session = (instance: Instance): Session.Producer => ({
      * itself will build, which keeps `fabricate` reachable on the result.
      */
     const built = new instance.Fabricator(identity as Buildable, {
-      ...(named === undefined ? {} : { salt: layer([named]) }),
+      /**
+       * `ordinal: null` alongside the salt, not the salt alone. Fabricator
+       * documents a salt as a *pin* rather than a fork — "a salted build takes
+       * the next ordinal exactly as an unsalted one does" — so layering the
+       * name on its own leaves the source's construction counter in the trace,
+       * and a named block's value still shifts with whatever was built before
+       * it. `null` is fabricator's own encoding for a build that deliberately
+       * takes no ordinal, which is exactly what a name asserts: this block is
+       * identified by what it is called, not by where it fell in the scope.
+       *
+       * Unnamed blocks keep the counter. Construction order is the only thing
+       * left to tell two of them apart.
+       */
+      ...(named === undefined ? {} : { salt: layer([named]), ordinal: null }),
     });
 
     /**
