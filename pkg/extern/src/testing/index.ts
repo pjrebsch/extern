@@ -1,7 +1,7 @@
 import type { Config } from "../Config";
 import type { Context } from "../Context";
 import { UnusedMocksError } from "../Error";
-import { OWN_ROOT, type TypeLambda } from "../Extension";
+import type { TypeLambda } from "../Extension";
 import { mocking, type Mocker } from "../Mocking";
 import type { IdentityMap, Spy } from "../Spy";
 import { never, type Promisable } from "../Types";
@@ -25,7 +25,7 @@ export const testing =
     if (config.extensions.all.length === 0) {
       await config.scope.run(context, async () => fn(mock));
     } else {
-      await config.extensions.scope({ ignore: [OWN_ROOT] }, async (produce) => {
+      await config.extensions.scope(async (produce) => {
         /**
          * Assigned *before* `scope.run`, so it is already in place by the
          * time any test code — or a producible block reached from it — can

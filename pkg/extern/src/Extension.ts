@@ -149,17 +149,6 @@ export namespace Extension {
   }
 
   /**
-   * `ignore` carries extern's own source roots. An extension that resolves
-   * the calling test file from a stack must exclude these *in addition to*
-   * its own frames — the stack reads library -> extension -> extern -> test,
-   * so a walk that passes over only the extension's own code stops at
-   * extern's internals instead of reaching the test.
-   */
-  export interface ScopeOptions {
-    readonly ignore: readonly string[];
-  }
-
-  /**
    * An extension that contributes identities: its own schemas become usable
    * as block identities, and a block built from one produces a value instead
    * of throwing when it has no mock.
@@ -199,13 +188,12 @@ export namespace Extension {
     /**
      * Open one scope per `extern.testing` block, and run `block` inside it —
      * where this extension sets up and tears down whatever it needs for the
-     * duration of one test. See {@link ScopeOptions} for `ignore`.
+     * duration of one test.
      *
      * The session must carry a `produce`: claiming identities and serving
      * none is the contract violation this variant exists to rule out.
      */
     readonly "scope": <$Return>(
-      options: ScopeOptions,
       block: (session: Session.Producer) => Promise<$Return>,
     ) => Promise<$Return>;
   }
@@ -222,12 +210,8 @@ export namespace Extension {
   export interface Observer extends Base {
     readonly kind: "observer";
 
-    /**
-     * Open one scope per `extern.testing` block, and run `block` inside it.
-     * See {@link ScopeOptions} for `ignore`.
-     */
+    /** Open one scope per `extern.testing` block, and run `block` inside it. */
     readonly scope: <$Return>(
-      options: ScopeOptions,
       block: (session: Session) => Promise<$Return>,
     ) => Promise<$Return>;
   }
@@ -253,26 +237,6 @@ export namespace Extension {
  */
 export type LambdaOf<$Extension> =
   $Extension extends Extension.Producer<infer $Lambda> ? $Lambda : never;
-
-/**
- * This package's own source root — `src/` in this repo's own tests,
- * `dist/esm/` once built.
- *
- * `new URL(".", ...)` because this file sits *directly* in `src/`. It must
- * cover every extern file that can sit between the user's test and a
- * production — the `typed`/`validated` cores above all. A root scoped any
- * more narrowly leaves those frames eligible, and an extension walking the
- * stack then attributes a production to extern's internals instead of to the
- * user's test.
- *
- * That failure hides easily. A core's frame only appears in the stack when
- * its call into the extension is not in tail position, so an engine that
- * elides tail calls can mask it on one code path while another path — one
- * that happens to wrap the call — resolves somewhere else entirely. The two
- * paths then produce different values for the same block. Assert resolved
- * attribution directly; downstream determinism will not catch it.
- */
-export const OWN_ROOT = new URL(".", import.meta.url).href;
 
 /**
  * The configured extensions, composed into the single surface extern's core
@@ -301,7 +265,6 @@ export interface Extensions {
    * {@link Produce} that routes to whichever extension claims each identity.
    */
   readonly scope: <$Return>(
-    options: Extension.ScopeOptions,
     block: (produce: Produce) => Promise<$Return>,
   ) => Promise<$Return>;
 }
@@ -331,7 +294,6 @@ export const compose = (extensions: readonly Extension.Any[]): Extensions => {
    * expresses far less directly.
    */
   const scope = <$Return>(
-    options: Extension.ScopeOptions,
     block: (produce: Produce) => Promise<$Return>,
   ): Promise<$Return> => {
     const enter = (
@@ -368,7 +330,7 @@ export const compose = (extensions: readonly Extension.Any[]): Extensions => {
         });
       }
 
-      return extension.scope(options, (session) =>
+      return extension.scope((session) =>
         enter(index + 1, [...opened, { extension, session }]),
       );
     };

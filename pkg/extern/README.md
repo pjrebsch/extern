@@ -449,7 +449,7 @@ const myExtension = (): Extension<MyLambda> => ({
 
   supports: (identity) => isMySchema(identity),
 
-  scope: (options, block) =>
+  scope: (block) =>
     block({ produce: (identity, named) => buildFrom(identity, named) }),
 });
 ```
@@ -463,7 +463,7 @@ extension configured:
 const recorder = (): Extension => ({
   kind: "observer",
   name: "recorder",
-  scope: async (options, block) => {
+  scope: async (block) => {
     const finish = startRecording();
     try {
       return await block({});
@@ -479,11 +479,9 @@ const recorder = (): Extension => ({
 without `supports`, an `unmocked` on an observer, or a producer whose session
 carries no `produce` are all type-level compile errors rather than runtime surprises.
 
-`scope` runs once per `extern.testing()` block, for every extension. Its
-`options.ignore` carries extern's own source roots — an extension that resolves
-the calling test file from a stack must skip these **in addition to** its own
-frames, since the stack reads _your library → your extension → extern → the
-test_.
+`scope` runs once per `extern.testing()` block, for every extension. Each
+extension's scope wraps the next, so every one is open by the time the block
+runs.
 
 ### Type lambdas
 

@@ -16,7 +16,7 @@ type Equals<$X, $Y> =
 
 const assertType = <_$T extends true>(): void => {};
 
-const fabricator = initializeFabricator({ seed: "types-suite" });
+const fabricator = initializeFabricator({ salt: "types-suite" });
 const { T } = fabricator;
 
 const user = T.object({
@@ -111,7 +111,7 @@ describe("the `produce()` gate", () => {
           const n = via.fabricate();
           assertType<Equals<typeof n, number>>();
 
-          expect(via.trace.file).toBeDefined();
+          expect(via.trace.kind).toBe("number");
 
           return n;
         },

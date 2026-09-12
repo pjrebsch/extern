@@ -3,7 +3,7 @@ import { initialize as initializeFabricator } from "@ghostry/fabricator";
 import { describe, expect, it } from "bun:test";
 import { fabricatorExtension } from "../src";
 
-const fabricator = initializeFabricator({ seed: "produce-suite" });
+const fabricator = initializeFabricator({ salt: "produce-suite" });
 const { T } = fabricator;
 
 const schema = T.object({
@@ -91,13 +91,12 @@ describe("`produce(({ via }) => ...)`", () => {
 
   /**
    * The handle is the built Fabricator, so everything it carries is reachable
-   * — not just `fabricate`. `trace` is what makes attribution directly
-   * assertable rather than inferred from downstream values.
+   * — not just `fabricate`.
    */
   it("exposes the built Fabricator itself, `trace` included", async () => {
     await extern.testing((mock) => {
       mock(schema).produce(({ via }) => {
-        expect(via.trace.file).toBeDefined();
+        expect(via.trace.kind).toBe("object");
         expect(via.schema).toBeDefined();
         return via.fabricate();
       });

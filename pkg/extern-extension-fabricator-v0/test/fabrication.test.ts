@@ -9,7 +9,7 @@ import { describe, expect, it } from "bun:test";
 import * as S from "sury";
 import { fabricatorExtension, type FabricatorLambda } from "../src";
 
-const fabricator = initializeFabricator({ seed: "fabrication-suite" });
+const fabricator = initializeFabricator({ salt: "fabrication-suite" });
 const { T } = fabricator;
 
 const schema = T.object({

@@ -4,7 +4,7 @@ import { describe, expect, it } from "bun:test";
 import { fabricatorExtension } from "../src";
 import { fabricateElsewhere } from "./fixtures/elsewhere";
 
-const fabricator = initializeFabricator({ seed: "determinism-suite" });
+const fabricator = initializeFabricator({ salt: "determinism-suite" });
 const { T } = fabricator;
 
 type Id = { id: number };
@@ -62,8 +62,8 @@ describe("across testing blocks", () => {
   });
 
   /**
-   * Each block's stream is keyed by its own identity and name, so introducing
-   * an unrelated block between two runs must not shift either.
+   * Every testing scope starts from a fresh counter, so work in one scope
+   * cannot shift a later one.
    */
   it("is unperturbed by an unrelated block sandwiched between", async () => {
     let before: Id | undefined;
@@ -83,13 +83,8 @@ describe("across testing blocks", () => {
   });
 });
 
-describe("the per-file seed layer", () => {
-  /**
-   * Keyed on the file that opened the testing block, not on the file the
-   * `by()` call sits in — so this compares two `testing()` call sites, not two
-   * block bodies.
-   */
-  it("draws differently for the same schema from another file", async () => {
+describe("across module boundaries", () => {
+  it("draws identically for the same schema from another file", async () => {
     let here: Id | undefined;
 
     await extern.testing(() => void (here = block()));
@@ -97,7 +92,7 @@ describe("the per-file seed layer", () => {
     const there = await fabricateElsewhere<Id>(extern, schema);
 
     expect(here).toBeDefined();
-    expect(here).not.toEqual(there);
+    expect(here).toEqual(there);
   });
 });
 

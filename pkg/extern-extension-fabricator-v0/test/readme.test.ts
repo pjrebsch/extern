@@ -14,7 +14,7 @@ import { fabricatorExtension } from "../src";
 
 // --- "Setup" ---------------------------------------------------------------
 
-const fabricator = initializeFabricator({ seed: "my-suite" });
+const fabricator = initializeFabricator({ salt: "my-suite" });
 
 const extern = await initializeExtern({
   extensions: [fabricatorExtension({ instance: fabricator })],

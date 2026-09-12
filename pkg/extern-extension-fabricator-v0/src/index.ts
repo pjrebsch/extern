@@ -1,11 +1,6 @@
 import type { Extension, Session } from "@ghostry/extern";
 import { initialize, layer } from "@ghostry/fabricator";
-import {
-  Kind,
-  Meta,
-  resolveCallerFile,
-  type Buildable,
-} from "@ghostry/fabricator/internal";
+import { Kind, Meta, type Buildable } from "@ghostry/fabricator/internal";
 import type { FabricatorLambda } from "./Types";
 
 export type { Built, FabricatorLambda, HandleFor, Schema } from "./Types";
@@ -21,18 +16,6 @@ export type { Built, FabricatorLambda, HandleFor, Schema } from "./Types";
 export type Instance = ReturnType<typeof initialize>;
 
 /**
- * This package's own source root — `src/` in this repo's tests, `dist/esm/`
- * once built.
- *
- * Skipped *in addition to* the roots extern hands over, never instead of
- * them. The stack a fabrication sees reads
- * fabricator -> this package -> extern -> the user's test, so a walk that
- * passes over only fabricator's own frames (which fabricator always does) and
- * this package's stops inside extern's core instead of reaching the test.
- */
-const OWN_ROOT = new URL(".", import.meta.url).href;
-
-/**
  * True for a raw fabricator Schema or a built Fabricator — anything a block
  * can construct a value from. Every kind's Schema and every built Fabricator
  * carries both brands, unlike anything else that extern's `Identity` covers.
@@ -44,26 +27,10 @@ const supports = (identity: unknown): boolean =>
   && Meta in identity;
 
 /**
- * The file that called into extern, expressed relative to the *instance's own
- * resolved attribution root* — mirroring what fabricator computes for an
- * unmediated construction, but through a walk that also passes over extern's
- * frames and this package's.
- *
- * `undefined` under `{ kind: "none" }` attribution, matching fabricator's own
- * short-circuit: the user has opted out of file attribution, so this pins no
- * file and seeds by none — landing in the same file-less bucket an unpinned
- * construction would, rather than diverging from it.
+ * A deliberately foreknown constant, layered onto the salt by every testing
+ * block's scope.
  */
-const attributedCallerFile = (
-  instance: Instance,
-  ignore: readonly string[],
-): string | undefined => {
-  const attribution = instance.context.attribution;
-
-  return "root" in attribution ?
-      resolveCallerFile({ skip: [...ignore, OWN_ROOT], root: attribution.root })
-    : undefined;
-};
+const SCOPE_SALT = "@ghostry/extern";
 
 export interface Configuration {
   /** A `@ghostry/fabricator` instance — the result of its `initialize()`. */
@@ -110,46 +77,31 @@ export const fabricatorExtension = (
 
   ...(config.unmocked === undefined ? {} : { unmocked: config.unmocked }),
 
-  scope: (options, block) => {
-    const site = attributedCallerFile(config.instance, options.ignore);
-
+  scope: (block) => {
     /**
      * `wrap`, not `fork`: it opens an ambient frame as well as handing back a
      * scoped instance, so a user's own `new fabricator.Fabricator(...)`
-     * written directly in the test resolves against the very same seed as the
+     * written directly in the test resolves against the very same source as the
      * blocks around it.
      *
-     * The overlay carries a seed layer and nothing else — `attribution` is
-     * deliberately not overridden, so whatever policy the user gave their own
-     * `initialize()` stays in force. `site` is stripped of `:line:col`, so the
-     * layer is per-*file*: reordering or inserting testing blocks within a
-     * file never perturbs another block's data.
+     * {@link SCOPE_SALT} is what keeps a block's draws distinct from those of
+     * the scope enclosing it. Every `wrap` re-instantiates, so a block's
+     * ordinals restart at zero — and with the enclosing salt inherited
+     * unchanged, the two sources would be identically seeded. The *n*th
+     * fabrication of a schema inside the block would then equal the *n*th
+     * outside it, at every ordinal rather than merely the first.
+     *
+     * Everything else the enclosing configuration carries inherits untouched,
+     * a harness's per-test salt above all.
      */
-    return config.instance.wrap(
-      site === undefined ? {} : { seed: layer([site]) },
-      (scoped) => block(session(scoped, options.ignore)),
+    return config.instance.wrap({ salt: layer([SCOPE_SALT]) }, (scoped) =>
+      block(session(scoped)),
     );
   },
 });
 
-const session = (
-  instance: Instance,
-  ignore: readonly string[],
-): Session.Producer => ({
+const session = (instance: Instance): Session.Producer => ({
   produce: (identity, named, using) => {
-    /**
-     * Pinned explicitly, computed fresh for *this* construction, rather than
-     * left to fabricator's own default attribution. Fabricator's live stack
-     * walk knows to pass over its own frames, not this package's or extern's,
-     * so left alone it would attribute the fabrication to this file instead of
-     * to whichever file actually wrote the `by(...).will(...)` call.
-     *
-     * Because it relativizes against the same root fabricator itself uses,
-     * this and an ambient, unpinned construction in the same test resolve the
-     * identical string — which is what makes the two agree.
-     */
-    const file = attributedCallerFile(instance, ignore);
-
     /**
      * `as Buildable`, not `as never`: the identity is `unknown` to extern, so
      * nothing here can name its schema type, but `never` would collapse the
@@ -157,8 +109,7 @@ const session = (
      * itself will build, which keeps `fabricate` reachable on the result.
      */
     const built = new instance.Fabricator(identity as Buildable, {
-      ...(file === undefined ? {} : { file }),
-      ...(named === undefined ? {} : { seed: layer([named]) }),
+      ...(named === undefined ? {} : { salt: layer([named]) }),
     });
 
     /**

@@ -52,10 +52,9 @@ const myExtension = (): Extension<MyLambda> => ({
   supports: (identity) => isMySchema(identity),
 
   /** The README's `produce`, including its `using` third argument. */
-  scope: (options, block) =>
+  scope: (block) =>
     block({
       produce: (identity, named, using) => {
-        void options;
         const value = buildFrom(identity, named);
 
         const built: MyBuilder<string> = {
@@ -79,8 +78,7 @@ const startRecording = () => {
 const recorder = (): Extension => ({
   kind: "observer",
   name: "recorder",
-  scope: async (options, block) => {
-    void options;
+  scope: async (block) => {
     const finish = startRecording();
     try {
       return await block({});

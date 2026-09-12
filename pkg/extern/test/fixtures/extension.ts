@@ -63,12 +63,11 @@ export interface BoxedLambda extends TypeLambda, HandleLambda {
 
 /** What a scope opened by {@link boxedExtension} recorded while it was open. */
 export interface Opened {
-  ignore: readonly string[];
   entered: number;
   order: string[];
 }
 
-export const opened = (): Opened => ({ ignore: [], entered: 0, order: [] });
+export const opened = (): Opened => ({ entered: 0, order: [] });
 
 export const boxedExtension = (options?: {
   readonly name?: string;
@@ -84,7 +83,7 @@ export const boxedExtension = (options?: {
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: async (scopeOptions, block) => {
+  scope: async (block) => {
     /**
      * Reset per scope, and folded into every produced value: this stands in
      * for the per-construction state a real extension derives values from,
@@ -94,7 +93,6 @@ export const boxedExtension = (options?: {
     let ordinal = 0;
 
     if (options?.opened !== undefined) {
-      options.opened.ignore = scopeOptions.ignore;
       options.opened.entered += 1;
       options.opened.order.push(options?.name ?? "boxed");
     }
@@ -168,9 +166,8 @@ export const taggedExtension = (options?: {
   supports: (identity) =>
     typeof identity === "object" && identity !== null && other in identity,
 
-  scope: async (scopeOptions, block) => {
+  scope: async (block) => {
     if (options?.opened !== undefined) {
-      options.opened.ignore = scopeOptions.ignore;
       options.opened.entered += 1;
       options.opened.order.push("tagged");
     }
@@ -194,7 +191,7 @@ export const greedyExtension = (): Extension<BoxedLambda> => ({
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: async (_options, block) => block({ produce: () => "greedy" }),
+  scope: async (block) => block({ produce: () => "greedy" }),
 });
 
 /**
@@ -213,9 +210,8 @@ export const observerExtension = (options?: {
 
   name: "observer",
 
-  scope: async (scopeOptions, block) => {
+  scope: async (block) => {
     if (options?.opened !== undefined) {
-      options.opened.ignore = scopeOptions.ignore;
       options.opened.entered += 1;
       options.opened.order.push("observer");
     }
@@ -241,5 +237,5 @@ export const brokenExtension = (): Extension<BoxedLambda> => ({
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: async (_options, block) => block({} as Session.Producer),
+  scope: async (block) => block({} as Session.Producer),
 });

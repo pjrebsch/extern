@@ -441,35 +441,7 @@ describe("an extension", () => {
     });
   });
 
-  describe("the ignored roots handed to an extension", () => {
-    /**
-     * Asserted directly rather than through downstream determinism. A root
-     * scoped too narrowly — this file's own directory instead of the package
-     * source root — leaves extern's core frames eligible for an extension's
-     * stack walk, and the walk then attributes a production to extern
-     * internals. That failure is masked on any code path where the call into
-     * the extension sits in tail position, so it cannot be caught reliably by
-     * observing produced values.
-     */
-    it("covers extern's own internals, not just one directory", async () => {
-      const seen = opened();
-      const extern = await initialize({
-        extensions: [boxedExtension({ opened: seen })],
-      });
-
-      await extern.testing(() => {});
-
-      expect(seen.ignore).toHaveLength(1);
-
-      const root = seen.ignore[0]!;
-      const core = new URL("../src/typed/Core.ts", import.meta.url).href;
-      const validated = new URL("../src/validated/Core.ts", import.meta.url)
-        .href;
-
-      expect(core.startsWith(root)).toBe(true);
-      expect(validated.startsWith(root)).toBe(true);
-    });
-
+  describe("the scope opened for an extension", () => {
     it("opens the extension scope exactly once per testing block", async () => {
       const seen = opened();
       const extern = await initialize({
@@ -509,19 +481,6 @@ describe("an extension", () => {
       await extern.testing(() => {});
 
       expect(seen.entered).toBe(2);
-    });
-
-    it("receives extern's ignored roots like any other extension", async () => {
-      const seen = opened();
-      const extern = await initialize({
-        extensions: [observerExtension({ opened: seen })],
-      });
-
-      await extern.testing(() => {});
-
-      const core = new URL("../src/typed/Core.ts", import.meta.url).href;
-
-      expect(core.startsWith(seen.ignore[0]!)).toBe(true);
     });
 
     it("claims no identities, so unmocked blocks still throw", async () => {

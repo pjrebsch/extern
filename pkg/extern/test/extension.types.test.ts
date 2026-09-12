@@ -473,13 +473,13 @@ describe("the `Extension` union", () => {
       name: "p",
       unmocked: "produce",
       supports: () => true,
-      scope: async (_o, block) => block({ produce: p }),
+      scope: async (block) => block({ produce: p }),
     };
 
     const observer: Extension = {
       kind: "observer",
       name: "o",
-      scope: async (_o, block) => block({}),
+      scope: async (block) => block({}),
     };
 
     expect([producer.kind, observer.kind]).toEqual(["producer", "observer"]);
@@ -495,7 +495,7 @@ describe("the `Extension` union", () => {
     const lambdaWithoutSupports: Extension<BoxedLambda> = {
       kind: "producer",
       name: "x",
-      scope: async (_o, block) => block({ produce: p }),
+      scope: async (block) => block({ produce: p }),
     };
 
     const unmockedWithoutSupports: Extension = {
@@ -503,7 +503,7 @@ describe("the `Extension` union", () => {
       name: "x",
       // @ts-expect-error — `unmocked` is meaningless without claiming.
       unmocked: "error",
-      scope: async (_o, block) => block({}),
+      scope: async (block) => block({}),
     };
 
     const claimsButServesNothing: Extension<BoxedLambda> = {
@@ -511,7 +511,7 @@ describe("the `Extension` union", () => {
       name: "x",
       supports: () => true,
       // @ts-expect-error — a producer's session must carry `produce`.
-      scope: async (_o, block) => block({}),
+      scope: async (block) => block({}),
     };
 
     const supportsWithoutLambda: Extension = {
@@ -519,7 +519,7 @@ describe("the `Extension` union", () => {
       name: "x",
       // @ts-expect-error — an observer claims nothing.
       supports: () => true,
-      scope: async (_o, block) => block({}),
+      scope: async (block) => block({}),
     };
 
     expect([
@@ -554,13 +554,13 @@ describe("the `Extension` union", () => {
         {
           kind: "observer",
           name: "inline",
-          scope: async (_o, block) => block({}),
+          scope: async (block) => block({}),
         } satisfies Extension,
         {
           kind: "producer",
           name: "inline-producer",
           supports: (identity) => typeof identity === "object",
-          scope: async (_o, block) => block({ produce: p }),
+          scope: async (block) => block({ produce: p }),
         } satisfies Extension<BoxedLambda>,
       ],
     });

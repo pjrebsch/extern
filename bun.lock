@@ -16,18 +16,18 @@
     },
     "pkg/extern": {
       "name": "@ghostry/extern",
-      "version": "0.0.12",
+      "version": "0.0.13",
     },
     "pkg/extern-extension-fabricator-v0": {
       "name": "@ghostry/extern-extension-fabricator-v0",
       "version": "0.0.1",
       "devDependencies": {
         "@ghostry/extern": "workspace:*",
-        "@ghostry/fabricator": "^0.0.2",
+        "@ghostry/fabricator": "^0.0.3",
       },
       "peerDependencies": {
-        "@ghostry/extern": ">=0.0.13 <0.1.0",
-        "@ghostry/fabricator": ">=0.0.2 <0.1.0",
+        "@ghostry/extern": "^0.0.13",
+        "@ghostry/fabricator": "^0.0.3",
       },
     },
   },
@@ -65,7 +65,7 @@
 
     "@ghostry/extern-extension-fabricator-v0": ["@ghostry/extern-extension-fabricator-v0@workspace:pkg/extern-extension-fabricator-v0"],
 
-    "@ghostry/fabricator": ["@ghostry/fabricator@0.0.2", "", {}, "sha512-VxdN+kbiP+WkxCoM8zeuewzn7xvVKXzRur/T/35stXGUgzxbSp6RRIw35lL+lJgvRZXBE7LD9P1Se1fyiAo4yg=="],
+    "@ghostry/fabricator": ["@ghostry/fabricator@0.0.3", "", {}, "sha512-ejef6MULwOyZQ/lqNplKaDI6LIrXUWMUsDK0vUQm6HWrNPUuqLK2X0b+JH5KiGST+uu+ep+DHYkIaj3RwYZUBw=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.1.4", "", { "dependencies": { "@tybys/wasm-util": "^0.10.1" }, "peerDependencies": { "@emnapi/core": "^1.7.1", "@emnapi/runtime": "^1.7.1" } }, "sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow=="],
 

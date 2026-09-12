@@ -4,11 +4,9 @@ import type { FabricatorLambda } from "../../src";
 /**
  * Opens a testing block from a *different file* than the suite that calls this.
  *
- * The seed layer this extension applies is keyed on the file that called into
- * extern — the `testing()` call site, `:line:col` stripped — so an identical
- * block run from here must draw differently from one run in the test file
- * itself. That is what keeps one file's fabricated data from shifting when an
- * unrelated file gains or loses a test.
+ * Each testing block gets a fresh construction counter without a file-derived
+ * salt, so an identical block run here draws the same value as one run in the
+ * test file itself.
  */
 export const fabricateElsewhere = async <$T>(
   extern: Initialized<FabricatorLambda>,

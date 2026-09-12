@@ -14,7 +14,7 @@ import { initialize as initializeExtern } from "@ghostry/extern";
 import { initialize as initializeFabricator } from "@ghostry/fabricator";
 import { fabricatorExtension } from "@ghostry/extern-extension-fabricator-v0";
 
-const fabricator = initializeFabricator({ seed: "my-suite" });
+const fabricator = initializeFabricator({ salt: "my-suite" });
 
 export const extern = await initializeExtern({
   extensions: [fabricatorExtension({ instance: fabricator })],
@@ -92,38 +92,66 @@ fabricates on demand.
 
 ## Determinism
 
-**Two different files** feed each fabricated value:
-
-- **The seed layer** comes from the file that opened the testing block — the
-  one that called `extern.testing(...)`, so in practice your test file
-  (`:line:col` stripped, making the layer per-file rather than per-line).
-- **The attribution** comes from the file that wrote the `by(...)` call. Extern
-  blocks normally live in your source, so this is usually _not_ the test file.
-
-Together they give:
+Every testing block gets a fresh construction counter, inheriting the
+fabricator instance's salt and layering one foreknown constant onto it — never
+anything derived from where a block was written. That gives:
 
 - the same block fabricates the same value across independent `testing()` calls
-- reordering or inserting blocks within a file does not perturb another block
-- the same schema exercised from a different _test_ file draws differently
-- moving the block itself to a different _source_ file changes its attribution
-
-Attribution is relative to your fabricator instance's own attribution root —
-never to `process.cwd()`, which would otherwise re-seed the suite depending on
-which directory you ran the tests from.
-
-> One caveat, since it can surprise you: attribution reads the call stack, and
-> a trivial one-line wrapper around `by(...)` can have its frame elided
-> entirely (Bun's engine implements proper tail calls). Attribution then falls
-> through to _that_ wrapper's caller. It is deterministic — the same code
-> shape resolves the same way every run — but refactoring such a wrapper into
-> or out of a single expression can shift the values it fabricates.
+- the same schema exercised from a different test file draws the same value
+- construction order within one testing block determines unnamed values
 
 A user's own `new fabricator.Fabricator(schema)` written inside a testing block
-shares that block's seed, but is a **separate draw** — successive ordinals in
+shares that block's source, but is a **separate draw** — successive ordinals in
 one stream — not a second view of the block's value.
 
+One written _outside_ the block draws from the enclosing scope instead. The
+constant layer is what keeps those two streams disjoint: a fabrication either
+side of a testing block can never collide with one inside it, at any ordinal.
+
 Two blocks over one schema in one test are a single production. Give them
-`named(...)` to make them distinct; that name feeds the seed.
+`named(...)` to make them distinct; that name layers onto the salt.
+
+### With a test harness
+
+`@ghostry/fabricator/harnessing` opens a `wrap` of its own per test, salted by
+that test's identity. This extension's `wrap` then runs _inside_ it, and the two
+nest rather than compete: a `wrap` lays its overlay over whichever frame is
+active, not over the instance it was called on. Blocks inside `extern.testing`
+inherit the enclosing test's salt, and its clock along with it.
+
+The construction ordinal does not carry through — every testing block
+re-instantiates, as above — but the scope's constant salt layer keeps the
+block's stream disjoint from the enclosing test's, so a `fabricate()` written
+either side of `extern.testing` never collides with one inside it.
+
+The harness's own `context.fabricator` stays usable inside a block. It holds the
+harness's scope rather than this extension's, but a construction resolves
+against the innermost active frame, so it draws in step with the blocks around
+it.
+
+Both halves must come from **one `initialize()`**:
+
+```ts
+const fabricator = initializeFabricator({ salt: "my-suite" });
+
+// harness integration and extension, one lineage
+integration(fabricator);
+fabricatorExtension({ instance: fabricator });
+```
+
+The ambient stack is created once at a root `initialize()` and threaded through
+every `fork` and `wrap` descended from it. Two roots never see each other's
+frames, so an extension pointed at a _second_ instance never observes the
+harness's frame and falls back to its own configuration — the per-test salt is
+lost and every test fabricates identically, with no error raised. A `fork()`
+stays within the lineage and is fine to pass.
+
+Determinism survives that; **distinctness** does not. The symptom is tests that
+write a fabricated id into shared state colliding with each other — passing
+individually, failing as a suite, and passing again under `.only`, which sends
+you looking for pollution rather than for the wiring. Worth one guard test in a
+suite's own setup: fabricate the same schema under two different test
+identities and assert the values differ.
 
 ## Requirements
 
