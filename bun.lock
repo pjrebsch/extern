@@ -20,7 +20,7 @@
     },
     "pkg/extern-extension-fabricator-v0": {
       "name": "@ghostry/extern-extension-fabricator-v0",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "devDependencies": {
         "@ghostry/extern": "workspace:*",
         "@ghostry/fabricator": ">=0.0.4 <0.1.0",

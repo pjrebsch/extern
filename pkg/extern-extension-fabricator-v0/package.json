@@ -1,6 +1,6 @@
 {
   "name": "@ghostry/extern-extension-fabricator-v0",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "description": "@ghostry/fabricator integration for @ghostry/extern — a typed extern block built from a fabricator schema produces its own value instead of requiring a mock.",
   "keywords": [
