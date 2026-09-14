@@ -122,10 +122,15 @@ is scoped to unnamed values.
 ### With a test harness
 
 `@ghostry/fabricator/harnessing` opens a `wrap` of its own per test, salted by
-that test's identity. This extension's `wrap` then runs _inside_ it, and the two
-nest rather than compete: a `wrap` lays its overlay over whichever frame is
-active, not over the instance it was called on. Blocks inside `extern.testing`
-inherit the enclosing test's salt, and its clock along with it.
+that test's identity. This extension's scope then runs _inside_ it, and the two
+nest rather than compete: blocks inside `extern.testing` inherit the enclosing
+test's salt, and its clock along with it.
+
+That nesting is deliberate rather than automatic. A `wrap` lays its overlay over
+the instance it was called on, so a receiver bound outside the running block —
+which the configured instance always is — would restate from that instance and
+drop the enclosing scope. This extension composes against `context.scope()`, the
+frame in effect, which is why the per-test salt arrives.
 
 The construction ordinal does not carry through — every testing block
 re-instantiates, as above — but the scope's constant salt layer keeps the
@@ -147,19 +152,32 @@ integration(fabricator);
 fabricatorExtension({ instance: fabricator });
 ```
 
-The ambient stack is created once at a root `initialize()` and threaded through
-every `fork` and `wrap` descended from it. Two roots never see each other's
-frames, so an extension pointed at a _second_ instance never observes the
-harness's frame and falls back to its own configuration — the per-test salt is
+A frame is visible only to instances on its own ancestral line. Two
+`initialize()` calls mint unrelated lineages and never see each other's frames
+— not even when handed the same `stack`, which selects a carrier and nothing
+more. So an extension pointed at a _second_ instance never observes the
+harness's frame and falls back to its own configuration: the per-test salt is
 lost and every test fabricates identically, with no error raised. A `fork()`
 stays within the lineage and is fine to pass.
 
 Determinism survives that; **distinctness** does not. The symptom is tests that
 write a fabricated id into shared state colliding with each other — passing
 individually, failing as a suite, and passing again under `.only`, which sends
-you looking for pollution rather than for the wiring. Worth one guard test in a
-suite's own setup: fabricate the same schema under two different test
-identities and assert the values differ.
+you looking for pollution rather than for the wiring.
+
+Where both instances are in scope, you can assert it directly — `root` is
+fabricator's answer to "same lineage?":
+
+```ts
+if (integrationInstance.root !== extensionInstance.root) {
+  throw new Error("fabricator instances are from different lineages");
+}
+```
+
+Where they are not — the two halves wired in separate modules, which is how this
+goes wrong in practice — one guard test in the suite's own setup covers it:
+fabricate the same schema under two different test identities and assert the
+values differ.
 
 ## Requirements
 

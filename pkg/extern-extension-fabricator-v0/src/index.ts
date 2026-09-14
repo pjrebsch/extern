@@ -93,10 +93,20 @@ export const fabricatorExtension = (
      *
      * Everything else the enclosing configuration carries inherits untouched,
      * a harness's per-test salt above all.
+     *
+     * `context.scope()`, not `config.instance`, is what makes that inheritance
+     * happen. A plain `wrap` lays its overlay over the instance it was called
+     * on, and this receiver is bound outside whatever block is running — so it
+     * would restate from the configured instance and drop an enclosing scope
+     * entirely, silently. `context.scope()` is the frame in effect, or the
+     * instance itself when there is none, which is this extension's contract in
+     * both cases with no branch. Called fresh here rather than hoisted:
+     * fabricator makes `scope` a function so that capturing it captures the
+     * lookup, where a captured result would otherwise pin one frame.
      */
-    return config.instance.wrap({ salt: layer([SCOPE_SALT]) }, (scoped) =>
-      block(session(scoped)),
-    );
+    return config.instance.context
+      .scope()
+      .wrap({ salt: layer([SCOPE_SALT]) }, (scoped) => block(session(scoped)));
   },
 });
 
