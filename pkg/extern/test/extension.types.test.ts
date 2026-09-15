@@ -10,6 +10,7 @@ import type {
   Session,
 } from "../src/Extension";
 import type { Testing } from "../src/testing";
+import type { Cleanup } from "../src/Cleanup";
 import type { Identity } from "../src/Types";
 import {
   boxed,
@@ -580,12 +581,20 @@ describe("the `Extension` union", () => {
     expect(true).toBe(true);
   });
 
-  /** A producer's session is `Required<Session>`; an observer's is not. */
-  it("requires `produce` on a producer's session alone", () => {
-    assertType<Equals<Session.Producer, Required<Session>>>();
+  /**
+   * A producer must serve what it claims, so `produce` is required on its
+   * session. Everything else on `Session` stays optional, which is why this is
+   * an intersection rather than `Required<Session>` — the latter would make
+   * every optional member mandatory for producers, `cleanup` today and whatever
+   * is added next.
+   */
+  it("requires `produce` on a producer's session, and nothing else", () => {
     assertType<Equals<Session.Producer["produce"], Produce>>();
+    assertType<Equals<Session.Producer["cleanup"], Cleanup | undefined>>();
+    assertType<Equals<Session["produce"], Produce | undefined>>();
 
-    expect(true).toBe(true);
+    const producing: Session.Producer = { produce: () => 1 };
+    expect(producing.cleanup).toBeUndefined();
   });
 });
 

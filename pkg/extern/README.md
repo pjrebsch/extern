@@ -481,6 +481,76 @@ carries no `produce` are all type-level compile errors rather than runtime surpr
 extension's scope wraps the next, so every one is open by the time the block
 runs.
 
+#### What `scope` is, and is not, for
+
+`scope` must return the block's value **unchanged**: a synchronous block stays
+synchronous, an asynchronous one stays a promise. That is what keeps
+`extern.testing()` synchronous for a synchronous test body, and it is the whole
+reason the signature is generic in the return rather than fixed to a promise.
+
+One consequence is worth knowing before writing an extension. A `finally` around
+`block(...)` runs at the **call** boundary, not at the test's completion. For a
+synchronous body those coincide. For an asynchronous one they do not — the call
+returns at the body's first `await` — so teardown written that way fires in the
+middle of the test rather than at its end.
+
+`await`ing to close that gap is not an option either: an `async` scope returns
+`Promise<$Return>` where the contract requires `$Return`, so it does not
+compile.
+
+Many extensions never meet this, because their state is kept alive by an
+ambient carrier rather than by them. That is the shape
+`@ghostry/extern-extension-fabricator-v0` has: fabricator's
+`AsyncLocalStorage` frame outlives the `scope` call by construction, so there is
+nothing to tear down. For everything else, a session may carry a `cleanup`.
+
+#### Teardown
+
+A session may carry a `cleanup`, settled when the block actually finishes,
+whether that is a `return` or a settled promise:
+
+```ts
+const profiler = (): Extension => ({
+  kind: "observer",
+  name: "profiler",
+  scope: (block) => {
+    const started = performance.now();
+
+    return block({
+      cleanup: (outcome) => report(performance.now() - started, outcome.ok),
+    });
+  },
+});
+```
+
+It rides on the session your scope already yields, so it closes over whatever
+that scope established with nothing threaded in between and no mutable variable
+written on the way in and read on the way out. Extern settles it inside your own
+open scope, so an ambient frame you opened is still live there.
+
+No `async`, no thenable check, and no cast. The block's value still passes
+through unchanged, so a synchronous test body stays synchronous. Only an
+asynchronous `cleanup` promotes the call to a promise, which is the sole honest
+way for a synchronous body with asynchronous teardown to report that it is done.
+
+`outcome` is `{ ok: true }` or `{ ok: false, error }`, so teardown can tell a
+passing test from a failing one without the guard that writing it by hand would
+need.
+
+**Ordering across extensions needs no coordination.** Each scope encloses the
+next, so an inner cleanup has already settled by the time an outer one is
+reached. Teardown unwinds innermost-first, and an outer cleanup waits for an
+inner asynchronous one.
+
+A throwing cleanup does not stop a sibling. Every failure is collected and
+reported once as a `CleanupFailedError` carrying them all. It is thrown when the
+block itself passed, and merely logged when the block failed, so the failure
+worth reading is never displaced by a teardown fault.
+
+An extension whose session declares no `cleanup` is not intercepted at all,
+which is what keeps a synchronous assertion failure reporting at your own line
+rather than inside extern.
+
 ### Type lambdas
 
 `Identity` is widened by a type-level function, encoded with the `this`-type

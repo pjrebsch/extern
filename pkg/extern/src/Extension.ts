@@ -1,3 +1,5 @@
+import type { Cleanup } from "./Cleanup";
+import { withCleanup } from "./Cleanup";
 import { AmbiguousIdentityError, ExtensionUnavailableError } from "./Error";
 
 /**
@@ -109,6 +111,24 @@ export type Produce = (
 export interface Session {
   /** Produce values for the identities this extension claims. */
   readonly produce?: Produce;
+
+  /**
+   * Teardown for this scope, settled when the testing block finishes — the end
+   * of the *block*, not the return of `scope`, which for an async body is its
+   * first `await`.
+   *
+   * Carried on the session rather than taken as a second hook, because the
+   * session is built inside `scope` and so already closes over whatever that
+   * scope established. There is nothing to thread and no mutable variable to
+   * write on the way in and read on the way out.
+   *
+   * Extern settles it inside this extension's own open scope, so an ambient
+   * frame the scope opened is still live here. Cleanups run innermost-first
+   * across extensions, an outer one waiting on an inner *async* one, and a
+   * throw does not stop a sibling: every failure is collected and reported once
+   * as a `CleanupFailedError`.
+   */
+  readonly cleanup?: Cleanup;
 }
 
 export namespace Session {
@@ -116,8 +136,12 @@ export namespace Session {
    * What a {@link Extension.Producer} must yield. `produce` is required: an
    * extension that claims identities has to serve them, and making that a
    * different type is what keeps "claims, but serves nothing" from compiling.
+   *
+   * Spelled as an intersection rather than `Required<Session>`, which would
+   * quietly make every *optional* member mandatory for producers — `cleanup`
+   * included — and does so again for whatever is added to `Session` next.
    */
-  export type Producer = Required<Session>;
+  export type Producer = Session & { readonly produce: Produce };
 }
 
 /**
@@ -187,13 +211,22 @@ export namespace Extension {
 
     /**
      * Open one scope per `extern.testing` block, and run `block` inside it —
-     * where this extension sets up and tears down whatever it needs for the
-     * duration of one test.
+     * where this extension establishes whatever it needs for the duration of
+     * one test.
      *
      * Return the block's value unchanged: a sync block stays sync, an async
-     * block stays a promise. A scope that `await`s promotes every testing
-     * block on the instance to a promise, so it should only do so when its
-     * own setup genuinely requires it.
+     * block stays a promise. That is what keeps a synchronous test body
+     * synchronous all the way through `extern.testing`, and it is why this is
+     * generic in the return rather than fixed to a promise.
+     *
+     * **Teardown does not belong in a `finally` here.** One would run at the
+     * *call* boundary, not at the test's completion, and for an async body the
+     * two differ — the call returns at the body's first `await`. `await`ing to
+     * close that gap does not compile either: an `async` scope returns
+     * `Promise<$Return>` where this requires `$Return`. Carry a
+     * {@link Session.cleanup} instead, which extern settles when the
+     * block actually finishes, inside this scope, and which costs a
+     * synchronous body nothing.
      *
      * The session must carry a `produce`: claiming identities and serving
      * none is the contract violation this variant exists to rule out.
@@ -217,10 +250,11 @@ export namespace Extension {
     /**
      * Open one scope per `extern.testing` block, and run `block` inside it.
      *
-     * Return the block's value unchanged: a sync block stays sync, an async
-     * block stays a promise. A scope that `await`s promotes every testing
-     * block on the instance to a promise, so it should only do so when its
-     * own setup genuinely requires it.
+     * Return the block's value unchanged, and put teardown on the session as a
+     * {@link Session.cleanup} rather than in a `finally` — see
+     * {@link Extension.Producer.scope}, where the constraint is identical. It
+     * bites an observer hardest, since recording when a block *finished* is the
+     * obvious thing to want.
      */
     readonly scope: <$Return>(block: (session: Session) => $Return) => $Return;
   }
@@ -301,8 +335,23 @@ export const compose = (extensions: readonly Extension.Any[]): Extensions => {
    * `block` runs. Recursive rather than a fold: each level has to return the
    * level below *inside* its own `scope` callback, which a reduce over thunks
    * expresses far less directly.
+   *
+   * That nesting is also what sequences teardown, with no ordering logic here:
+   * an inner {@link withCleanup} has already wrapped the block's result by the
+   * time an outer one wraps that. A scope whose session declares no `cleanup`
+   * is not intercepted at all, so an instance with no teardown anywhere keeps a
+   * synchronous throw reporting at the user's own line.
    */
   const scope = <$Return>(block: (produce: Produce) => $Return): $Return => {
+    /**
+     * One list for the whole composed scope, filled by every extension's own
+     * settlement. Where a cleanup runs and where its failure is recorded are
+     * independent: the first is what gives it its scope's frame, the second is
+     * what keeps several extensions' failures reporting once.
+     */
+    const errors: unknown[] = [];
+    let reporting = false;
+
     const enter = (
       index: number,
       opened: ReadonlyArray<{
@@ -337,9 +386,22 @@ export const compose = (extensions: readonly Extension.Any[]): Extensions => {
         });
       }
 
-      return extension.scope((session) =>
-        enter(index + 1, [...opened, { extension, session }]),
-      );
+      return extension.scope((session) => {
+        const descend = () =>
+          enter(index + 1, [...opened, { extension, session }]);
+
+        if (session.cleanup === undefined) return descend();
+
+        /**
+         * The outermost cleanup-bearing scope settles last, so it is the only
+         * one at which `errors` is final — and therefore the one that reports.
+         * Claimed on the way down, where outer scopes are reached first.
+         */
+        const aggregates = !reporting;
+        reporting = true;
+
+        return withCleanup(descend, session.cleanup, errors, aggregates);
+      });
     };
 
     return enter(0, []);

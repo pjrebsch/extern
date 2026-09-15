@@ -81,6 +81,24 @@ const recorder = (): Extension => ({
   },
 });
 
+// --- the README's teardown observer, verbatim ------------------------------
+
+const reports: Array<{ elapsed: number; ok: boolean }> = [];
+const report = (elapsed: number, ok: boolean) =>
+  void reports.push({ elapsed, ok });
+
+const profiler = (): Extension => ({
+  kind: "observer",
+  name: "profiler",
+  scope: (block) => {
+    const started = performance.now();
+
+    return block({
+      cleanup: (outcome) => report(performance.now() - started, outcome.ok),
+    });
+  },
+});
+
 describe("the README's `## Extensions` snippets", () => {
   it("runs the producer example, with both `produce()` forms", async () => {
     const user = mySchema<string>("user");
@@ -137,6 +155,35 @@ describe("the README's `## Extensions` snippets", () => {
     });
 
     expect(entries.length).toBe(before + 2);
+  });
+
+  it("runs the teardown example, reporting once per block", async () => {
+    const extern = await initialize({ extensions: [profiler()] });
+    const before = reports.length;
+
+    /** Synchronous body: no promise, and the report lands before the call returns. */
+    extern.testing(() => {});
+    expect(reports.length).toBe(before + 1);
+
+    /** Asynchronous body: the report waits for the body, not for the first `await`. */
+    await extern.testing(async () => {
+      await Promise.resolve();
+    });
+
+    expect(reports.length).toBe(before + 2);
+    expect(reports.every((r) => r.ok)).toBe(true);
+  });
+
+  it("reports a failing body as such", async () => {
+    const extern = await initialize({ extensions: [profiler()] });
+
+    expect(() =>
+      extern.testing(() => {
+        throw new Error("nope");
+      }),
+    ).toThrowError("nope");
+
+    expect(reports[reports.length - 1]?.ok).toBe(false);
   });
 
   it("widens `Identity` per instance, not globally", async () => {

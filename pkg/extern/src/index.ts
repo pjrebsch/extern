@@ -6,6 +6,8 @@ import { testing, type Testing } from "./testing/index.ts";
 import { typed, type Typed } from "./typed/index.ts";
 import { validated, type Validated } from "./validated/index.ts";
 
+export type { Cleanup, Outcome } from "./Cleanup.ts";
+
 export type { Configuration } from "./Config.ts";
 
 export type {
@@ -29,6 +31,7 @@ export { T } from "./T.ts";
 
 export {
   AmbiguousIdentityError,
+  CleanupFailedError,
   DuplicateMockError,
   ExtensionUnavailableError,
   ExternError,

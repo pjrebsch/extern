@@ -140,6 +140,39 @@ export class AmbiguousIdentityError extends ExternError {
 }
 
 /**
+ * The error thrown when one or more extension scopes failed to tear down.
+ *
+ * Carries every failure rather than the first: cleanups settle innermost-first
+ * and one throwing does not stop its siblings, so reporting only one would hide
+ * the rest. A named error rather than an `AggregateError` because this library
+ * targets ES2019, and because a structured `errors` list matches how every other
+ * error here carries its detail.
+ *
+ * Thrown only when the testing block itself passed. When the block failed, its
+ * own error is the one worth reading, so this is logged instead and the block's
+ * error propagates untouched.
+ */
+export class CleanupFailedError extends ExternError {
+  constructor(
+    /**
+     * Each failure, innermost scope first.
+     */
+    public readonly errors: ReadonlyArray<unknown>,
+  ) {
+    super();
+    this.name = "CleanupFailedError";
+
+    const details = errors
+      .map((error, i) => `${i + 1}:\n${String(error)}`)
+      .join("\n\n");
+
+    this.message =
+      `${errors.length} extension scope cleanup(s) threw while tearing down `
+      + `a testing block:\n\n${details}`;
+  }
+}
+
+/**
  * The error thrown at the end of an `extern.testing` block if there were
  * any mocks defined that were never used.
  */
