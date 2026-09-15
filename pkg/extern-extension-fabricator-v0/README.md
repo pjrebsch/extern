@@ -181,7 +181,8 @@ values differ.
 
 ## Requirements
 
-Needs an async stack carrier, which means any runtime with `node:async_hooks`
-— Bun, Node, and Deno. Extern's testing block is inherently asynchronous and
-this extension runs it inside fabricator's `wrap`, which refuses an async block
-under the synchronous carrier a browser bundle selects.
+Needs an async stack carrier only for async testing bodies, which means any
+runtime with `node:async_hooks` — Bun, Node, and Deno. This extension runs the
+testing block inside fabricator's `wrap`, which refuses an async block under
+the synchronous carrier a browser bundle selects. A sync body works under that
+carrier too.

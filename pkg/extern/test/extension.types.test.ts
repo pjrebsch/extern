@@ -9,6 +9,7 @@ import type {
   Produce,
   Session,
 } from "../src/Extension";
+import type { Testing } from "../src/testing";
 import type { Identity } from "../src/Types";
 import {
   boxed,
@@ -473,13 +474,13 @@ describe("the `Extension` union", () => {
       name: "p",
       unmocked: "produce",
       supports: () => true,
-      scope: async (block) => block({ produce: p }),
+      scope: (block) => block({ produce: p }),
     };
 
     const observer: Extension = {
       kind: "observer",
       name: "o",
-      scope: async (block) => block({}),
+      scope: (block) => block({}),
     };
 
     expect([producer.kind, observer.kind]).toEqual(["producer", "observer"]);
@@ -495,7 +496,7 @@ describe("the `Extension` union", () => {
     const lambdaWithoutSupports: Extension<BoxedLambda> = {
       kind: "producer",
       name: "x",
-      scope: async (block) => block({ produce: p }),
+      scope: (block) => block({ produce: p }),
     };
 
     const unmockedWithoutSupports: Extension = {
@@ -503,7 +504,7 @@ describe("the `Extension` union", () => {
       name: "x",
       // @ts-expect-error — `unmocked` is meaningless without claiming.
       unmocked: "error",
-      scope: async (block) => block({}),
+      scope: (block) => block({}),
     };
 
     const claimsButServesNothing: Extension<BoxedLambda> = {
@@ -511,7 +512,7 @@ describe("the `Extension` union", () => {
       name: "x",
       supports: () => true,
       // @ts-expect-error — a producer's session must carry `produce`.
-      scope: async (block) => block({}),
+      scope: (block) => block({}),
     };
 
     const supportsWithoutLambda: Extension = {
@@ -519,7 +520,7 @@ describe("the `Extension` union", () => {
       name: "x",
       // @ts-expect-error — an observer claims nothing.
       supports: () => true,
-      scope: async (block) => block({}),
+      scope: (block) => block({}),
     };
 
     expect([
@@ -554,13 +555,13 @@ describe("the `Extension` union", () => {
         {
           kind: "observer",
           name: "inline",
-          scope: async (block) => block({}),
+          scope: (block) => block({}),
         } satisfies Extension,
         {
           kind: "producer",
           name: "inline-producer",
           supports: (identity) => typeof identity === "object",
-          scope: async (block) => block({ produce: p }),
+          scope: (block) => block({ produce: p }),
         } satisfies Extension<BoxedLambda>,
       ],
     });
@@ -585,6 +586,20 @@ describe("the `Extension` union", () => {
     assertType<Equals<Session.Producer["produce"], Produce>>();
 
     expect(true).toBe(true);
+  });
+});
+
+describe("`Testing`", () => {
+  it("returns the body's value unchanged", () => {
+    const check = (testing: Testing) => {
+      const sync = testing(() => {});
+      const promised = testing(async () => {});
+
+      assertType<Equals<typeof sync, void>>();
+      assertType<Equals<typeof promised, Promise<void>>>();
+    };
+
+    expect(check).toBeTypeOf("function");
   });
 });
 

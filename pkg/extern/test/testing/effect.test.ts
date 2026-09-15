@@ -36,22 +36,22 @@ describe("`extern.testing`", async () => {
       expect(tracking.runs).toBe(0);
     });
 
-    it("requires all referenced effects to be used by the end of the block", async () => {
-      expect(
+    it("requires all referenced effects to be used by the end of the block", () => {
+      expect(() =>
         extern.testing((mock) => {
           mock.effect.named("abc").observe();
         }),
-      ).rejects.toThrowError(UnusedMocksError);
+      ).toThrowError(UnusedMocksError);
     });
 
     describe("with options", () => {
       describe("`unused: 'allow'`", () => {
-        it("permits the mock to go unused by the end of the testing block", async () => {
+        it("permits the mock to go unused by the end of the testing block", () => {
           expect(
             extern.testing((mock) => {
               mock.effect.named("abc").observe({ unused: "allow" });
             }),
-          ).resolves.toBeUndefined();
+          ).toBeUndefined();
         });
       });
     });
@@ -149,15 +149,15 @@ describe("`extern.testing`", async () => {
       });
 
       describe("when accessed more than once for the same name", () => {
-        it("throws an error", async () => {
-          expect(
+        it("throws an error", () => {
+          expect(() =>
             extern.testing((mock) => {
               const a = mock.effect.named("abc");
               const b = mock.effect.named("abc");
               a.observe();
               b.observe();
             }),
-          ).rejects.toThrowError(DuplicateMockError);
+          ).toThrowError(DuplicateMockError);
         });
       });
 

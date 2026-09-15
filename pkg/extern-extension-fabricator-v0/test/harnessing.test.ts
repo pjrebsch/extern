@@ -1,9 +1,6 @@
 import { initialize as initializeExtern } from "@ghostry/extern";
 import { initialize as initializeFabricator } from "@ghostry/fabricator";
-import {
-  integration,
-  type Identity,
-} from "@ghostry/fabricator/harnessing";
+import { integration, type Identity } from "@ghostry/fabricator/harnessing";
 import { describe, expect, it } from "bun:test";
 import { fabricatorExtension } from "../src";
 
@@ -51,7 +48,23 @@ const asTest = <$Return>(
   return harness.around(identity, () => body(identity));
 };
 
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  if (typeof value !== "object" || value === null) return false;
+  return typeof (value as PromiseLike<unknown>).then === "function";
+}
+
 describe("under a harness `around`", () => {
+  it("returns a non-thenable for a sync body under `around`", () => {
+    let value: Id | undefined;
+
+    const result = asTest("sync", () =>
+      extern.testing(() => void (value = block())),
+    );
+
+    expect(isThenable(result)).toBe(false);
+    expect(value).toBeDefined();
+  });
+
   /**
    * The whole point of the harness integration, and the thing that would be
    * silently lost if this extension's `wrap` laid its overlay over the base

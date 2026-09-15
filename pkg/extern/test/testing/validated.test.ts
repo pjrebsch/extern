@@ -31,22 +31,22 @@ describe("`extern.testing`", async () => {
       });
     });
 
-    it("requires all mocks to be used by the end of the block", async () => {
-      expect(
+    it("requires all mocks to be used by the end of the block", () => {
+      expect(() =>
         extern.testing((mock) => {
           mock(schema).with(987);
         }),
-      ).rejects.toThrowError(UnusedMocksError);
+      ).toThrowError(UnusedMocksError);
     });
 
     describe("with options", () => {
       describe("`unused: 'allow'`", () => {
-        it("permits the mock to go unused by the end of the testing block", async () => {
+        it("permits the mock to go unused by the end of the testing block", () => {
           expect(
             extern.testing((mock) => {
               mock(schema).with(987, { unused: "allow" });
             }),
-          ).resolves.toBeUndefined();
+          ).toBeUndefined();
         });
       });
     });
@@ -103,21 +103,22 @@ describe("`extern.testing`", async () => {
           let unblock = () => {};
           const blocker = new Promise<void>((r) => (unblock = r));
 
-          expect(
-            Promise.all([
-              extern.testing(async (mock) => {
-                mock(schema).with(999);
-                await blocker;
-                expect(await example(extern)).toBe(999);
-              }),
+          const first = extern.testing(async (mock) => {
+            mock(schema).with(999);
+            await blocker;
+            expect(await example(extern)).toBe(999);
+          });
 
-              extern.testing(async (mock) => {
-                mock(schema).with(777);
-                unblock();
-                expect(await example(extern)).toBe(777);
-              }),
-            ]),
-          ).rejects.toThrowError(IllegalConcurrencyTestingError);
+          expect(() =>
+            extern.testing(async (mock) => {
+              mock(schema).with(777);
+              unblock();
+              expect(await example(extern)).toBe(777);
+            }),
+          ).toThrowError(IllegalConcurrencyTestingError);
+
+          unblock();
+          await first;
         });
       });
     });

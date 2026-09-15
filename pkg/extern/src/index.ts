@@ -64,6 +64,9 @@ export interface Initialized<$Lambda extends TypeLambda = never> {
   /**
    * Run a supplied function in a testing context in which to mock source
    * extern blocks.
+   *
+   * Returns the body's value unchanged: a sync body stays sync, an async body
+   * stays a promise.
    */
   readonly testing: Testing<$Lambda>;
 

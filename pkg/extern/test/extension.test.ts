@@ -7,6 +7,7 @@ import {
   NotMockedError,
   UnusedMocksError,
 } from "../src/Error";
+import { isThenable } from "../src/Util";
 import {
   boxed,
   boxedExtension,
@@ -163,11 +164,11 @@ describe("an extension", () => {
     it("counts as unused when the block never runs", async () => {
       const extern = await initialize({ extensions: [boxedExtension()] });
 
-      expect(
+      expect(() =>
         extern.testing((mock) => {
           mock(boxed<string>("a")).produce();
         }),
-      ).rejects.toThrowError(UnusedMocksError);
+      ).toThrowError(UnusedMocksError);
     });
 
     it("is overridden by an explicit `with()`", async () => {
@@ -461,6 +462,18 @@ describe("an extension", () => {
       await extern.testing(() => {});
 
       expect(seen.entered).toBe(0);
+    });
+
+    it("returns a sync body synchronously, adding no promise of its own", async () => {
+      const extern = await initialize({ extensions: [boxedExtension()] });
+      let seen = false;
+
+      const result = extern.testing(() => {
+        seen = true;
+      });
+
+      expect(isThenable(result)).toBe(false);
+      expect(seen).toBe(true);
     });
   });
 

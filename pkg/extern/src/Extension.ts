@@ -190,18 +190,22 @@ export namespace Extension {
      * where this extension sets up and tears down whatever it needs for the
      * duration of one test.
      *
+     * Return the block's value unchanged: a sync block stays sync, an async
+     * block stays a promise. A scope that `await`s promotes every testing
+     * block on the instance to a promise, so it should only do so when its
+     * own setup genuinely requires it.
+     *
      * The session must carry a `produce`: claiming identities and serving
      * none is the contract violation this variant exists to rule out.
      */
     readonly "scope": <$Return>(
-      block: (session: Session.Producer) => Promise<$Return>,
-    ) => Promise<$Return>;
+      block: (session: Session.Producer) => $Return,
+    ) => $Return;
   }
 
   /**
    * An extension that claims nothing and only wants a scope per block — a
-   * debugging helper collecting which blocks ran, say, and reporting on them
-   * afterwards.
+   * debugging helper noting which blocks ran, say.
    *
    * It contributes no lambda, so `Identity` is unwidened and its presence
    * leaves every block behaving exactly as it would with no extension
@@ -210,10 +214,15 @@ export namespace Extension {
   export interface Observer extends Base {
     readonly kind: "observer";
 
-    /** Open one scope per `extern.testing` block, and run `block` inside it. */
-    readonly scope: <$Return>(
-      block: (session: Session) => Promise<$Return>,
-    ) => Promise<$Return>;
+    /**
+     * Open one scope per `extern.testing` block, and run `block` inside it.
+     *
+     * Return the block's value unchanged: a sync block stays sync, an async
+     * block stays a promise. A scope that `await`s promotes every testing
+     * block on the instance to a promise, so it should only do so when its
+     * own setup genuinely requires it.
+     */
+    readonly scope: <$Return>(block: (session: Session) => $Return) => $Return;
   }
 
   /**
@@ -263,10 +272,10 @@ export interface Extensions {
   /**
    * Open every extension's scope, innermost last, and run `block` with a
    * {@link Produce} that routes to whichever extension claims each identity.
+   *
+   * Returns the block's value unchanged, as each extension's `scope` must.
    */
-  readonly scope: <$Return>(
-    block: (produce: Produce) => Promise<$Return>,
-  ) => Promise<$Return>;
+  readonly scope: <$Return>(block: (produce: Produce) => $Return) => $Return;
 }
 
 export const compose = (extensions: readonly Extension.Any[]): Extensions => {
@@ -289,20 +298,18 @@ export const compose = (extensions: readonly Extension.Any[]): Extensions => {
 
   /**
    * Each extension's scope wraps the next, so every one is open by the time
-   * `block` runs. Recursive rather than a fold: each level has to await the
+   * `block` runs. Recursive rather than a fold: each level has to return the
    * level below *inside* its own `scope` callback, which a reduce over thunks
    * expresses far less directly.
    */
-  const scope = <$Return>(
-    block: (produce: Produce) => Promise<$Return>,
-  ): Promise<$Return> => {
+  const scope = <$Return>(block: (produce: Produce) => $Return): $Return => {
     const enter = (
       index: number,
       opened: ReadonlyArray<{
         readonly extension: Extension.Any;
         readonly session: Session;
       }>,
-    ): Promise<$Return> => {
+    ): $Return => {
       const extension = extensions[index];
 
       if (extension === undefined) {

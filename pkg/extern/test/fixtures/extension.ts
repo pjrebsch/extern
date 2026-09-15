@@ -83,7 +83,7 @@ export const boxedExtension = (options?: {
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: async (block) => {
+  scope: (block) => {
     /**
      * Reset per scope, and folded into every produced value: this stands in
      * for the per-construction state a real extension derives values from,
@@ -166,7 +166,7 @@ export const taggedExtension = (options?: {
   supports: (identity) =>
     typeof identity === "object" && identity !== null && other in identity,
 
-  scope: async (block) => {
+  scope: (block) => {
     if (options?.opened !== undefined) {
       options.opened.entered += 1;
       options.opened.order.push("tagged");
@@ -191,7 +191,7 @@ export const greedyExtension = (): Extension<BoxedLambda> => ({
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: async (block) => block({ produce: () => "greedy" }),
+  scope: (block) => block({ produce: () => "greedy" }),
 });
 
 /**
@@ -210,7 +210,7 @@ export const observerExtension = (options?: {
 
   name: "observer",
 
-  scope: async (block) => {
+  scope: (block) => {
     if (options?.opened !== undefined) {
       options.opened.entered += 1;
       options.opened.order.push("observer");
@@ -237,5 +237,5 @@ export const brokenExtension = (): Extension<BoxedLambda> => ({
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: async (block) => block({} as Session.Producer),
+  scope: (block) => block({} as Session.Producer),
 });

@@ -29,3 +29,8 @@ export function augmentFunction<
 
   return redefined as Fn & Props;
 }
+
+export function isThenable(value: unknown): value is PromiseLike<unknown> {
+  if (typeof value !== "object" || value === null) return false;
+  return typeof (value as PromiseLike<unknown>).then === "function";
+}

@@ -4,17 +4,26 @@ import { UnusedMocksError } from "../Error";
 import type { TypeLambda } from "../Extension";
 import { mocking, type Mocker } from "../Mocking";
 import type { IdentityMap, Spy } from "../Spy";
-import { never, type Promisable } from "../Types";
+import { never } from "../Types";
+import { isThenable } from "../Util";
 
-export type Testing<$Lambda extends TypeLambda = never> = (
-  fn: (mocker: Mocker<$Lambda>) => Promisable<void>,
-) => Promise<void>;
+export type Testing<$Lambda extends TypeLambda = never> = <$Return>(
+  fn: (mocker: Mocker<$Lambda>) => $Return,
+) => $Return;
 
+/**
+ * Deliberately no `try`/`catch` around the body. A synchronous throw reports
+ * at the user's own line on bun — the same property harness works to preserve.
+ * The unused-mock check is skipped when the body throws (the throw happens
+ * first), which matches the previous `await` path.
+ */
 export const testing =
   (config: Config): Testing<TypeLambda> =>
-  async (fn: (mocker: Mocker<TypeLambda>) => Promisable<void>) => {
+  <$Return>(fn: (mocker: Mocker<TypeLambda>) => $Return): $Return => {
     const { mock, spies } = mocking();
     const context: Context = { spies, productions: new Map() };
+
+    const run = () => config.scope.run(context, () => fn(mock));
 
     /**
      * Skipped entirely when no extension was configured, so a suite that
@@ -22,21 +31,28 @@ export const testing =
      * subject to whatever constraints that scope imposes on the block it
      * wraps.
      */
-    if (config.extensions.all.length === 0) {
-      await config.scope.run(context, async () => fn(mock));
-    } else {
-      await config.extensions.scope(async (produce) => {
-        /**
-         * Assigned *before* `scope.run`, so it is already in place by the
-         * time any test code — or a producible block reached from it — can
-         * read it.
-         */
-        context.produce = produce;
-        await config.scope.run(context, async () => fn(mock));
-      });
+    const result =
+      config.extensions.all.length === 0 ?
+        run()
+      : config.extensions.scope((produce) => {
+          /**
+           * Assigned *before* `scope.run`, so it is already in place by the
+           * time any test code — or a producible block reached from it — can
+           * read it.
+           */
+          context.produce = produce;
+          return run();
+        });
+
+    if (isThenable(result)) {
+      return result.then((value) => {
+        disallowUnusedMocks(spies);
+        return value;
+      }) as $Return;
     }
 
     disallowUnusedMocks(spies);
+    return result;
   };
 
 const disallowUnusedMocks = (spyMap: IdentityMap) => {

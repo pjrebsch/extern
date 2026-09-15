@@ -69,22 +69,15 @@ const myExtension = (): Extension<MyLambda> => ({
 
 // --- the README's observer, verbatim ---------------------------------------
 
-let recorded = 0;
-const startRecording = () => {
-  const at = ++recorded;
-  return () => void at;
-};
+const entries: string[] = [];
+const record = (what: string) => void entries.push(what);
 
 const recorder = (): Extension => ({
   kind: "observer",
   name: "recorder",
-  scope: async (block) => {
-    const finish = startRecording();
-    try {
-      return await block({});
-    } finally {
-      finish();
-    }
+  scope: (block) => {
+    record("entered");
+    return block({});
   },
 });
 
@@ -112,7 +105,7 @@ describe("the README's `## Extensions` snippets", () => {
   });
 
   it("runs the observer example, leaving every block unchanged", async () => {
-    const before = recorded;
+    const before = entries.length;
 
     const extern = await initialize({ extensions: [recorder()] });
 
@@ -124,7 +117,26 @@ describe("the README's `## Extensions` snippets", () => {
       expect(extern.typed.by(count).will(() => 0)).toBe(1);
     });
 
-    expect(recorded).toBe(before + 1);
+    expect(entries.length).toBe(before + 1);
+  });
+
+  /**
+   * The observer records on *entry*, which is the only thing `scope` can do
+   * correctly. A `finally` around `block({})` would fire at the body's first
+   * `await` rather than at the test's end, so an entry-only observer is the
+   * shape the README teaches — and this pins that it behaves identically
+   * whether the body is sync or async.
+   */
+  it("records once per block, for a sync and an async body alike", async () => {
+    const extern = await initialize({ extensions: [recorder()] });
+    const before = entries.length;
+
+    extern.testing(() => {});
+    await extern.testing(async () => {
+      await Promise.resolve();
+    });
+
+    expect(entries.length).toBe(before + 2);
   });
 
   it("widens `Identity` per instance, not globally", async () => {

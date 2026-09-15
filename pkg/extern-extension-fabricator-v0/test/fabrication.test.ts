@@ -101,12 +101,12 @@ describe("implicit fabrication", async () => {
     });
   });
 
-  it("still raises `UnusedMocksError` for a mock that never runs", async () => {
-    expect(
+  it("still raises `UnusedMocksError` for a mock that never runs", () => {
+    expect(() =>
       extern.testing((mock) => {
         mock(schema).with({ id: 1, name: "unused" });
       }),
-    ).rejects.toThrowError(UnusedMocksError);
+    ).toThrowError(UnusedMocksError);
   });
 });
 

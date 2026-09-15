@@ -1,10 +1,11 @@
 import type { AsyncLocalStorage } from "node:async_hooks";
 import type { Context } from "./Context";
 import { IllegalConcurrencyTestingError } from "./Error";
+import { isThenable } from "./Util";
 
 export interface Scope {
   readonly current: () => Context | undefined;
-  readonly run: (context: Context, fn: () => Promise<void>) => Promise<void>;
+  readonly run: <$Return>(context: Context, fn: () => $Return) => $Return;
 }
 
 class AsyncScope implements Scope {
@@ -18,74 +19,61 @@ class AsyncScope implements Scope {
     return this.store.getStore();
   };
 
-  public readonly run = async (
+  public readonly run = <$Return>(
     context: Context,
-    fn: () => Promise<void>,
-  ): Promise<void> => {
+    fn: () => $Return,
+  ): $Return => {
     return this.store.run(context, fn);
   };
 }
 
 class SyncScope implements Scope {
-  private readonly mutex = new Mutex({
-    onContest: () => {
-      throw new IllegalConcurrencyTestingError();
-    },
-  });
-
   private context: Context | undefined = undefined;
 
   public readonly current = () => {
     return this.context;
   };
 
-  public readonly run = async (
+  public readonly run = <$Return>(
     context: Context,
-    fn: () => Promise<void>,
-  ): Promise<void> => {
-    const release = await this.mutex.acquire();
+    fn: () => $Return,
+  ): $Return => {
+    /**
+     * Thrown synchronously so it surfaces at the `testing` call site rather
+     * than inside a promise, matching fabricator's reasoning for
+     * `SynchronousStackError`. Nothing has started, so no promise is
+     * abandoned.
+     */
+    if (this.context !== undefined) {
+      throw new IllegalConcurrencyTestingError();
+    }
+
+    this.context = context;
+
+    let result: $Return | undefined;
 
     try {
-      this.context = context;
-      return await fn();
+      result = fn();
     } finally {
-      this.context = undefined;
-      release();
+      if (!isThenable(result)) {
+        this.context = undefined;
+      }
     }
-  };
-}
 
-interface MutexConfig {
-  onContest: (contestant: Promise<void>) => Promise<void>;
-}
+    if (isThenable(result)) {
+      return result.then(
+        (value) => {
+          this.context = undefined;
+          return value;
+        },
+        (error: unknown) => {
+          this.context = undefined;
+          throw error;
+        },
+      ) as $Return;
+    }
 
-class Mutex {
-  private readonly queue: Promise<void>[] = [];
-
-  private readonly onContest: MutexConfig["onContest"];
-
-  constructor(config?: Partial<MutexConfig>) {
-    this.onContest = config?.onContest || Promise.resolve;
-  }
-
-  public readonly acquire = async (): Promise<() => void> => {
-    let release: () => void = () => {};
-
-    const queue = this.queue;
-
-    const next = new Promise<void>((resolve) => {
-      release = () => {
-        queue.pop();
-        resolve();
-      };
-    });
-
-    const previous = queue[0];
-    queue.unshift(next);
-
-    if (previous) await this.onContest(previous);
-
-    return release;
+    return result as $Return;
   };
 }
 

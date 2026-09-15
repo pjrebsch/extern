@@ -265,6 +265,8 @@ The return value is subject to the type defined by the associated schema and the
 
 #### Mocking requirements
 
+A sync `extern.testing()` body completes synchronously, so `await` is only needed when the body itself is asynchronous.
+
 Within `extern.testing()`, all value-producing `extern` blocks **must** be mocked. If such a block is used without a registered mock, an error will be thrown, even if the test would not otherwise fail. The expectation of this library is that no external interactions will actually occur during tests since testing scopes should be isolated for the sake of performance and reliability. If external interactions do need to occur during a test, the requirement can be disabled as necessary via `passthrough()` (as a later section covers).
 
 Also, by default, any defined `mock` must end up being used by the end of the `extern.testing()` block, otherwise an `UnusedMocksError` will be thrown, even if the test would not otherwise fail. This prevents superfluous mocking that results in confusion about what setup is actually needed to run a test. To disable this requirement, pass an options object as the final argument for a mock registration to allow that particular mock to go unused: `{ unused: "allow" }`. This can be useful for asserting that the corresponding source code block did _not_ get executed.
@@ -463,13 +465,9 @@ extension configured:
 const recorder = (): Extension => ({
   kind: "observer",
   name: "recorder",
-  scope: async (block) => {
-    const finish = startRecording();
-    try {
-      return await block({});
-    } finally {
-      finish();
-    }
+  scope: (block) => {
+    record("entered");
+    return block({});
   },
 });
 ```
