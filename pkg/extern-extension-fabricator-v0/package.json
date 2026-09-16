@@ -52,6 +52,7 @@
   },
   "devDependencies": {
     "@ghostry/extern": "workspace:*",
-    "@ghostry/fabricator": "^0.0.4"
+    "@ghostry/fabricator": "^0.0.5",
+    "@ghostry/harness": "^0.0.4"
   }
 }

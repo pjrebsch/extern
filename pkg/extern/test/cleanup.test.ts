@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import * as S from "sury";
 import { initialize } from "../src";
-import type { Outcome } from "../src/Cleanup";
 import { CleanupFailedError } from "../src/Error";
 import type { Extension } from "../src/Extension";
 import { isThenable } from "../src/Util";
@@ -15,13 +14,12 @@ import { boxed, type BoxedLambda } from "./fixtures/extension";
 const observer = (log: string[], name: string): Extension => ({
   kind: "observer",
   name,
-  scope: (block) => {
+  *frame() {
     log.push(`${name}:enter`);
 
-    return block({
-      cleanup: (outcome: Outcome) =>
-        void log.push(`${name}:cleanup:${outcome.ok ? "ok" : "failed"}`),
-    });
+    const outcome = yield {};
+
+    log.push(`${name}:cleanup:${outcome.ok ? "ok" : "failed"}`);
   },
 });
 
@@ -29,16 +27,17 @@ const observer = (log: string[], name: string): Extension => ({
 const slowObserver = (log: string[], name: string): Extension => ({
   kind: "observer",
   name,
-  scope: (block) =>
-    block({
-      cleanup: async () => {
-        await Promise.resolve();
-        log.push(`${name}:cleanup`);
-      },
-    }),
+  async *frame() {
+    try {
+      yield {};
+    } finally {
+      await Promise.resolve();
+      log.push(`${name}:cleanup`);
+    }
+  },
 });
 
-describe("`Session.cleanup`", () => {
+describe("frame teardown", () => {
   describe("a synchronous body", () => {
     it("stays synchronous, and tears down at the body's end", async () => {
       const log: string[] = [];
@@ -142,12 +141,13 @@ describe("`Session.cleanup`", () => {
     const throwing = (name: string, error: Error): Extension => ({
       kind: "observer",
       name,
-      scope: (block) =>
-        block({
-          cleanup: () => {
-            throw error;
-          },
-        }),
+      *frame() {
+        try {
+          yield {};
+        } finally {
+          throw error;
+        }
+      },
     });
 
     it("propagates the failure when the body succeeded", async () => {
@@ -211,12 +211,14 @@ describe("`Session.cleanup`", () => {
         typeof identity === "object"
         && identity !== null
         && "label" in identity,
-      scope: (block) =>
-        block({
-          produce: (identity) => `${(identity as { label: string }).label}!`,
-          cleanup: (outcome) =>
-            void log.push(`cleanup:${outcome.ok ? "ok" : "failed"}`),
-        }),
+      *frame() {
+        const outcome = yield {
+          produce: (identity: unknown) =>
+            `${(identity as { label: string }).label}!`,
+        };
+
+        log.push(`cleanup:${outcome.ok ? "ok" : "failed"}`);
+      },
     });
 
     it("produces values and still tears down at settlement", async () => {
@@ -251,7 +253,9 @@ describe("`Session.cleanup`", () => {
       const bare: Extension = {
         kind: "observer",
         name: "bare",
-        scope: (block) => block({}),
+        *frame() {
+          yield {};
+        },
       };
       const boom = new Error("boom");
       const extern = await initialize({ extensions: [bare] });

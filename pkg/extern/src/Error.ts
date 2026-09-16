@@ -195,3 +195,65 @@ export class UnusedMocksError extends ExternError {
       + `\n\n${details}`;
   }
 }
+
+/**
+ * The error thrown when an extension's `frame` returns something that is not a
+ * generator.
+ *
+ * The likeliest cause is a frame written as a plain function — one that
+ * establishes a session and returns it, or that returns teardown. Either runs
+ * its setup and then silently never tears down, so refusing is what keeps a
+ * suite from passing with teardown quietly skipped.
+ */
+export class ExtensionFrameResultError extends ExternError {
+  constructor(public readonly extension: string) {
+    super();
+    this.name = "ExtensionFrameResultError";
+    this.message =
+      `The \`frame\` of extension ${JSON.stringify(extension)} did not return `
+      + `a generator. Declare it as \`*frame()\` or \`async *frame()\`: `
+      + `everything before the \`yield\` is setup, everything after it is `
+      + `teardown.`;
+  }
+}
+
+/**
+ * The error thrown when an extension's `frame` yields something that is neither
+ * a session nor a wrapper.
+ *
+ * A yield is how the frame hands extern what it established, so a value of the
+ * wrong shape means the block would run without the session the author believed
+ * they had supplied.
+ */
+export class ExtensionFrameSessionError extends ExternError {
+  constructor(
+    public readonly extension: string,
+    public readonly received: string,
+  ) {
+    super();
+    this.name = "ExtensionFrameSessionError";
+    this.message =
+      `The \`frame\` of extension ${JSON.stringify(extension)} yielded a `
+      + `${received}. Yield either the session object, or a wrapper `
+      + `\`(body) => …\` that runs \`body(session)\` inside whatever the `
+      + `extension opens.`;
+  }
+}
+
+/**
+ * The error thrown when an extension's `frame` yields a second time.
+ *
+ * There is one testing block per scope, so there is one suspension point. A
+ * second `yield` has no body to run at, and treating it as teardown would run
+ * the author's remaining code at a moment they never intended.
+ */
+export class ExtensionFrameYieldError extends ExternError {
+  constructor(public readonly extension: string) {
+    super();
+    this.name = "ExtensionFrameYieldError";
+    this.message =
+      `The \`frame\` of extension ${JSON.stringify(extension)} yielded more `
+      + `than once. A frame has exactly one \`yield\`: the block runs there, `
+      + `and everything after it is teardown.`;
+  }
+}

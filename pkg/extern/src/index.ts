@@ -6,7 +6,9 @@ import { testing, type Testing } from "./testing/index.ts";
 import { typed, type Typed } from "./typed/index.ts";
 import { validated, type Validated } from "./validated/index.ts";
 
-export type { Cleanup, Outcome } from "./Cleanup.ts";
+export type { Outcome } from "./Cleanup.ts";
+
+export type { Frame, Wrapper } from "./Frame.ts";
 
 export type { Configuration } from "./Config.ts";
 
@@ -33,6 +35,9 @@ export {
   AmbiguousIdentityError,
   CleanupFailedError,
   DuplicateMockError,
+  ExtensionFrameResultError,
+  ExtensionFrameSessionError,
+  ExtensionFrameYieldError,
   ExtensionUnavailableError,
   ExternError,
   IllegalConcurrencyTestingError,

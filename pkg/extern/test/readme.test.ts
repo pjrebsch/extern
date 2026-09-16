@@ -52,9 +52,13 @@ const myExtension = (): Extension<MyLambda> => ({
   supports: (identity) => isMySchema(identity),
 
   /** The README's `produce`, including its `using` third argument. */
-  scope: (block) =>
-    block({
-      produce: (identity, named, using) => {
+  *frame() {
+    yield {
+      produce: (
+        identity: unknown,
+        named: string | undefined,
+        using?: (h: unknown) => unknown,
+      ) => {
         const value = buildFrom(identity, named);
 
         const built: MyBuilder<string> = {
@@ -64,7 +68,8 @@ const myExtension = (): Extension<MyLambda> => ({
 
         return using === undefined ? built.value() : using(built);
       },
-    }),
+    };
+  },
 });
 
 // --- the README's observer, verbatim ---------------------------------------
@@ -75,9 +80,9 @@ const record = (what: string) => void entries.push(what);
 const recorder = (): Extension => ({
   kind: "observer",
   name: "recorder",
-  scope: (block) => {
+  *frame() {
     record("entered");
-    return block({});
+    yield {};
   },
 });
 
@@ -90,12 +95,12 @@ const report = (elapsed: number, ok: boolean) =>
 const profiler = (): Extension => ({
   kind: "observer",
   name: "profiler",
-  scope: (block) => {
+  *frame() {
     const started = performance.now();
 
-    return block({
-      cleanup: (outcome) => report(performance.now() - started, outcome.ok),
-    });
+    const outcome = yield {};
+
+    report(performance.now() - started, outcome.ok);
   },
 });
 
@@ -139,11 +144,10 @@ describe("the README's `## Extensions` snippets", () => {
   });
 
   /**
-   * The observer records on *entry*, which is the only thing `scope` can do
-   * correctly. A `finally` around `block({})` would fire at the body's first
-   * `await` rather than at the test's end, so an entry-only observer is the
-   * shape the README teaches — and this pins that it behaves identically
-   * whether the body is sync or async.
+   * This observer records on *entry* only — everything before its `yield`. The
+   * point of the test is that entry happens exactly once per block and at the
+   * same moment whether the body is sync or async, which is what lets the
+   * README teach setup and teardown as two halves of one function.
    */
   it("records once per block, for a sync and an async body alike", async () => {
     const extern = await initialize({ extensions: [recorder()] });

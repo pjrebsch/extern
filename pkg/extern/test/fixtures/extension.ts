@@ -83,7 +83,7 @@ export const boxedExtension = (options?: {
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: (block) => {
+  *frame() {
     /**
      * Reset per scope, and folded into every produced value: this stands in
      * for the per-construction state a real extension derives values from,
@@ -126,7 +126,7 @@ export const boxedExtension = (options?: {
       },
     };
 
-    return block(session);
+    yield session;
   },
 });
 
@@ -166,15 +166,16 @@ export const taggedExtension = (options?: {
   supports: (identity) =>
     typeof identity === "object" && identity !== null && other in identity,
 
-  scope: (block) => {
+  *frame() {
     if (options?.opened !== undefined) {
       options.opened.entered += 1;
       options.opened.order.push("tagged");
     }
 
-    return block({
-      produce: (identity) => `tagged(${(identity as Tagged<unknown>).label})`,
-    });
+    yield {
+      produce: (identity: unknown) =>
+        `tagged(${(identity as Tagged<unknown>).label})`,
+    };
   },
 });
 
@@ -191,7 +192,9 @@ export const greedyExtension = (): Extension<BoxedLambda> => ({
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: (block) => block({ produce: () => "greedy" }),
+  *frame() {
+    yield { produce: () => "greedy" };
+  },
 });
 
 /**
@@ -210,13 +213,13 @@ export const observerExtension = (options?: {
 
   name: "observer",
 
-  scope: (block) => {
+  *frame() {
     if (options?.opened !== undefined) {
       options.opened.entered += 1;
       options.opened.order.push("observer");
     }
 
-    return block({});
+    yield {};
   },
 });
 
@@ -227,7 +230,7 @@ export const observerExtension = (options?: {
  * {@link Session.Producer}, so this shape no longer type-checks — reaching
  * `ExtensionUnavailableError` takes a deliberate defeat of the types, which
  * is exactly what that error's own documentation claims. Without the cast,
- * `block({})` is a compile error rather than a runtime one.
+ * `yield {}` is a compile error rather than a runtime one.
  */
 export const brokenExtension = (): Extension<BoxedLambda> => ({
   kind: "producer",
@@ -237,5 +240,7 @@ export const brokenExtension = (): Extension<BoxedLambda> => ({
   supports: (identity) =>
     typeof identity === "object" && identity !== null && stub in identity,
 
-  scope: (block) => block({} as Session.Producer),
+  *frame() {
+    yield {} as Session.Producer;
+  },
 });

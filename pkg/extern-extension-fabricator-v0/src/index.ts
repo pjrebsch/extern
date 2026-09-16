@@ -77,7 +77,7 @@ export const fabricatorExtension = (
 
   ...(config.unmocked === undefined ? {} : { unmocked: config.unmocked }),
 
-  scope: (block) => {
+  *frame() {
     /**
      * `wrap`, not `fork`: it opens an ambient frame as well as handing back a
      * scoped instance, so a user's own `new fabricator.Fabricator(...)`
@@ -104,9 +104,10 @@ export const fabricatorExtension = (
      * fabricator makes `scope` a function so that capturing it captures the
      * lookup, where a captured result would otherwise pin one frame.
      */
-    return config.instance.context
-      .scope()
-      .wrap({ salt: layer([SCOPE_SALT]) }, (scoped) => block(session(scoped)));
+    yield (body) =>
+      config.instance.context
+        .scope()
+        .wrap({ salt: layer([SCOPE_SALT]) }, (scoped) => body(session(scoped)));
   },
 });
 

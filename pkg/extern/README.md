@@ -451,8 +451,9 @@ const myExtension = (): Extension<MyLambda> => ({
 
   supports: (identity) => isMySchema(identity),
 
-  scope: (block) =>
-    block({ produce: (identity, named) => buildFrom(identity, named) }),
+  *frame() {
+    yield { produce: (identity, named) => buildFrom(identity, named) };
+  },
 });
 ```
 
@@ -465,9 +466,9 @@ extension configured:
 const recorder = (): Extension => ({
   kind: "observer",
   name: "recorder",
-  scope: (block) => {
+  *frame() {
     record("entered");
-    return block({});
+    yield {};
   },
 });
 ```
@@ -477,79 +478,99 @@ const recorder = (): Extension => ({
 without `supports`, an `unmocked` on an observer, or a producer whose session
 carries no `produce` are all type-level compile errors rather than runtime surprises.
 
-`scope` runs once per `extern.testing()` block, for every extension. Each
-extension's scope wraps the next, so every one is open by the time the block
+`frame` runs once per `extern.testing()` block, for every extension. Each
+extension's frame encloses the next, so every one is open by the time the block
 runs.
 
-#### What `scope` is, and is not, for
+#### The shape of a frame
 
-`scope` must return the block's value **unchanged**: a synchronous block stays
-synchronous, an asynchronous one stays a promise. That is what keeps
-`extern.testing()` synchronous for a synchronous test body, and it is the whole
-reason the signature is generic in the return rather than fixed to a promise.
-
-One consequence is worth knowing before writing an extension. A `finally` around
-`block(...)` runs at the **call** boundary, not at the test's completion. For a
-synchronous body those coincide. For an asynchronous one they do not — the call
-returns at the body's first `await` — so teardown written that way fires in the
-middle of the test rather than at its end.
-
-`await`ing to close that gap is not an option either: an `async` scope returns
-`Promise<$Return>` where the contract requires `$Return`, so it does not
-compile.
-
-Many extensions never meet this, because their state is kept alive by an
-ambient carrier rather than by them. That is the shape
-`@ghostry/extern-extension-fabricator-v0` has: fabricator's
-`AsyncLocalStorage` frame outlives the `scope` call by construction, so there is
-nothing to tear down. For everything else, a session may carry a `cleanup`.
-
-#### Teardown
-
-A session may carry a `cleanup`, settled when the block actually finishes,
-whether that is a `return` or a settled promise:
+A frame is a generator with **one** suspension point. Everything before the
+`yield` is setup, the block runs at the `yield`, and everything after it is
+teardown:
 
 ```ts
 const profiler = (): Extension => ({
   kind: "observer",
   name: "profiler",
-  scope: (block) => {
+  *frame() {
     const started = performance.now();
 
-    return block({
-      cleanup: (outcome) => report(performance.now() - started, outcome.ok),
-    });
+    const outcome = yield {};
+
+    report(performance.now() - started, outcome.ok);
   },
 });
 ```
 
-It rides on the session your scope already yields, so it closes over whatever
-that scope established with nothing threaded in between and no mutable variable
-written on the way in and read on the way out. Extern settles it inside your own
-open scope, so an ambient frame you opened is still live there.
+Because setup and teardown share one function — and, when you want one, one
+`try` — a `finally` after the `yield` runs on every path: the block passed, the
+block failed, or your own setup threw on the way in before the block ever ran.
 
-No `async`, no thenable check, and no cast. The block's value still passes
-through unchanged, so a synchronous test body stays synchronous. Only an
-asynchronous `cleanup` promotes the call to a promise, which is the sole honest
-way for a synchronous body with asynchronous teardown to report that it is done.
+```ts
+*frame() {
+  const conn = pool.acquire();
+
+  try {
+    yield { produce: buildFrom(conn) };
+  } finally {
+    pool.release(conn);
+  }
+}
+```
 
 `outcome` is `{ ok: true }` or `{ ok: false, error }`, so teardown can tell a
-passing test from a failing one without the guard that writing it by hand would
-need.
+passing block from a failing one. A `catch` around the `yield` never fires:
+extern resumes the frame with the outcome rather than throwing into it, so an
+extension observes a failure without being able to intercept or replace it. Use
+`try`/`finally`, not `try`/`catch`.
 
-**Ordering across extensions needs no coordination.** Each scope encloses the
-next, so an inner cleanup has already settled by the time an outer one is
-reached. Teardown unwinds innermost-first, and an outer cleanup waits for an
-inner asynchronous one.
+`async function*` works, and promotes the block to a promise — the only honest
+way for a synchronous body with asynchronous teardown to report that it is done.
+A **synchronous** generator resumes synchronously and so cannot await its
+teardown; teardown that must be awaited needs `async function*`.
 
-A throwing cleanup does not stop a sibling. Every failure is collected and
+#### Running the block inside something
+
+When the block must run _inside_ something the extension opens — an
+`AsyncLocalStorage` scope, a library's own `wrap`, a pooled connection's
+callback — yield a **wrapper** instead of a session. It receives a `body` it
+must call exactly once, passing the session forward, and whose value it must
+return unchanged:
+
+```ts
+*frame() {
+  yield (body) => library.wrap(
+    options,
+    (scoped) => body({ produce: from(scoped) }),
+  );
+}
+```
+
+That is how a scoped thing reaches `produce` with no mutable variable in
+between. Extern settles your teardown inside your own wrapper, so a scope you
+opened is still live after the `yield`.
+
+Returning the block's value **unchanged** is what keeps `extern.testing()`
+synchronous for a synchronous test body. A wrapper that awaits promotes every
+block on the instance to a promise.
+
+#### Teardown across extensions
+
+**Ordering needs no coordination.** Each frame encloses the next, so an inner
+teardown has already settled by the time an outer one is reached. Teardown
+unwinds innermost-first, and an outer frame waits for an inner asynchronous one.
+
+A throwing teardown does not stop a sibling. Every failure is collected and
 reported once as a `CleanupFailedError` carrying them all. It is thrown when the
 block itself passed, and merely logged when the block failed, so the failure
 worth reading is never displaced by a teardown fault.
 
-An extension whose session declares no `cleanup` is not intercepted at all,
-which is what keeps a synchronous assertion failure reporting at your own line
-rather than inside extern.
+Three mistakes are refused rather than left to surface as a suite that passes
+with teardown quietly skipped: a `frame` that returns something other than a
+generator (`ExtensionFrameResultError`), a `yield` carrying neither a session nor
+a wrapper (`ExtensionFrameSessionError`), and a second `yield`
+(`ExtensionFrameYieldError`) — there is one block, so there is one suspension
+point.
 
 ### Type lambdas
 

@@ -1,6 +1,7 @@
-import type { Cleanup } from "./Cleanup";
 import { withCleanup } from "./Cleanup";
 import { AmbiguousIdentityError, ExtensionUnavailableError } from "./Error";
+import { enterFrame, type Frame, type Opened } from "./Frame";
+import { isThenable } from "./Util";
 
 /**
  * A type-level function from `In` to `Out` — the carrier that lets an
@@ -111,24 +112,6 @@ export type Produce = (
 export interface Session {
   /** Produce values for the identities this extension claims. */
   readonly produce?: Produce;
-
-  /**
-   * Teardown for this scope, settled when the testing block finishes — the end
-   * of the *block*, not the return of `scope`, which for an async body is its
-   * first `await`.
-   *
-   * Carried on the session rather than taken as a second hook, because the
-   * session is built inside `scope` and so already closes over whatever that
-   * scope established. There is nothing to thread and no mutable variable to
-   * write on the way in and read on the way out.
-   *
-   * Extern settles it inside this extension's own open scope, so an ambient
-   * frame the scope opened is still live here. Cleanups run innermost-first
-   * across extensions, an outer one waiting on an inner *async* one, and a
-   * throw does not stop a sibling: every failure is collected and reported once
-   * as a `CleanupFailedError`.
-   */
-  readonly cleanup?: Cleanup;
 }
 
 export namespace Session {
@@ -138,8 +121,8 @@ export namespace Session {
    * different type is what keeps "claims, but serves nothing" from compiling.
    *
    * Spelled as an intersection rather than `Required<Session>`, which would
-   * quietly make every *optional* member mandatory for producers — `cleanup`
-   * included — and does so again for whatever is added to `Session` next.
+   * quietly make every *optional* member mandatory for producers, and would do
+   * so again for whatever is added to `Session` next.
    */
   export type Producer = Session & { readonly produce: Produce };
 }
@@ -210,30 +193,23 @@ export namespace Extension {
     readonly "unmocked"?: "produce" | "error";
 
     /**
-     * Open one scope per `extern.testing` block, and run `block` inside it —
-     * where this extension establishes whatever it needs for the duration of
-     * one test.
+     * Open one scope per `extern.testing` block, as a generator with **one**
+     * suspension point.
      *
-     * Return the block's value unchanged: a sync block stays sync, an async
-     * block stays a promise. That is what keeps a synchronous test body
-     * synchronous all the way through `extern.testing`, and it is why this is
-     * generic in the return rather than fixed to a promise.
+     * Everything before the `yield` is setup. The `yield` is where the block
+     * runs, and carries the session this extension serves — either directly, or
+     * as a wrapper `(body) => …` for when the block must run *inside* something
+     * the extension opens, which then passes the session forward to `body`.
+     * Everything after the `yield` is teardown.
      *
-     * **Teardown does not belong in a `finally` here.** One would run at the
-     * *call* boundary, not at the test's completion, and for an async body the
-     * two differ — the call returns at the body's first `await`. `await`ing to
-     * close that gap does not compile either: an `async` scope returns
-     * `Promise<$Return>` where this requires `$Return`. Carry a
-     * {@link Session.cleanup} instead, which extern settles when the
-     * block actually finishes, inside this scope, and which costs a
-     * synchronous body nothing.
+     * Because setup and teardown share one `try`, a resource established before
+     * the `yield` is released by a `finally` after it whether the block failed,
+     * the block passed, or this frame's own setup threw on the way in.
      *
-     * The session must carry a `produce`: claiming identities and serving
-     * none is the contract violation this variant exists to rule out.
+     * The yielded session must carry a `produce`: claiming identities and
+     * serving none is the contract violation this variant exists to rule out.
      */
-    readonly "scope": <$Return>(
-      block: (session: Session.Producer) => $Return,
-    ) => $Return;
+    frame(): Frame<Session.Producer>;
   }
 
   /**
@@ -248,15 +224,12 @@ export namespace Extension {
     readonly kind: "observer";
 
     /**
-     * Open one scope per `extern.testing` block, and run `block` inside it.
-     *
-     * Return the block's value unchanged, and put teardown on the session as a
-     * {@link Session.cleanup} rather than in a `finally` — see
-     * {@link Extension.Producer.scope}, where the constraint is identical. It
-     * bites an observer hardest, since recording when a block *finished* is the
-     * obvious thing to want.
+     * Open one scope per `extern.testing` block — see
+     * {@link Extension.Producer.frame}, whose shape is identical but for the
+     * session it yields. Bracketing a block is what an observer most often
+     * wants, and a `try`/`finally` around the `yield` is how it is written.
      */
-    readonly scope: <$Return>(block: (session: Session) => $Return) => $Return;
+    frame(): Frame<Session>;
   }
 
   /**
@@ -331,16 +304,17 @@ export const compose = (extensions: readonly Extension.Any[]): Extensions => {
   };
 
   /**
-   * Each extension's scope wraps the next, so every one is open by the time
+   * Each extension's frame encloses the next, so every one is open by the time
    * `block` runs. Recursive rather than a fold: each level has to return the
-   * level below *inside* its own `scope` callback, which a reduce over thunks
-   * expresses far less directly.
+   * level below *inside* its own wrapper, which a reduce over thunks expresses
+   * far less directly.
    *
    * That nesting is also what sequences teardown, with no ordering logic here:
    * an inner {@link withCleanup} has already wrapped the block's result by the
-   * time an outer one wraps that. A scope whose session declares no `cleanup`
-   * is not intercepted at all, so an instance with no teardown anywhere keeps a
-   * synchronous throw reporting at the user's own line.
+   * time an outer one wraps that. Every frame is intercepted, since a generator
+   * must be resumed to run whatever follows its `yield`; the cost is one stack
+   * frame, not a relocated report, so a synchronous throw still surfaces at the
+   * user's own line.
    */
   const scope = <$Return>(block: (produce: Produce) => $Return): $Return => {
     /**
@@ -373,7 +347,7 @@ export const compose = (extensions: readonly Extension.Any[]): Extensions => {
           /**
            * Also thrown when the claiming extension's session yielded no
            * `produce`. {@link Extension.Producer} now makes that
-           * unrepresentable — its `scope` must hand `block` a
+           * unrepresentable — its `frame` must yield a
            * {@link Session.Producer} — so this is reachable only by defeating
            * the types: a plain JavaScript caller, or a cast. It stays a real
            * error rather than an assertion for exactly that reason.
@@ -386,22 +360,45 @@ export const compose = (extensions: readonly Extension.Any[]): Extensions => {
         });
       }
 
-      return extension.scope((session) => {
-        const descend = () =>
-          enter(index + 1, [...opened, { extension, session }]);
+      /**
+       * The outermost frame settles last, so it is the only one at which
+       * `errors` is final — and therefore the one that reports. Claimed on the
+       * way down, where outer scopes are reached first.
+       *
+       * Every frame has teardown, because every generator must be resumed to
+       * run whatever follows its `yield`. There is therefore no fast path that
+       * skips interception for an extension that tears nothing down.
+       */
+      const aggregates = !reporting;
+      reporting = true;
 
-        if (session.cleanup === undefined) return descend();
+      /**
+       * **The settlement is chained inside the wrapper's callback**, not around
+       * it. A continuation runs in the async context active where it was
+       * chained, so resuming from out here would find an `AsyncLocalStorage`
+       * scope the wrapper opened already gone; chained inside, teardown still
+       * has it.
+       */
+      const proceed = ({ wrapper, cleanup }: Opened): $Return =>
+        wrapper((session) =>
+          withCleanup(
+            () => enter(index + 1, [...opened, { extension, session }]),
+            cleanup,
+            errors,
+            aggregates,
+          ),
+        );
 
-        /**
-         * The outermost cleanup-bearing scope settles last, so it is the only
-         * one at which `errors` is final — and therefore the one that reports.
-         * Claimed on the way down, where outer scopes are reached first.
-         */
-        const aggregates = !reporting;
-        reporting = true;
+      const frame = enterFrame(() => extension.frame(), extension.name);
 
-        return withCleanup(descend, session.cleanup, errors, aggregates);
-      });
+      /**
+       * An `async function*` frame has not finished its setup until the first
+       * `next()` settles, so an async frame promotes the block — exactly as an
+       * awaited setup always did.
+       */
+      return isThenable(frame) ?
+          (frame.then(proceed) as $Return)
+        : proceed(frame);
     };
 
     return enter(0, []);

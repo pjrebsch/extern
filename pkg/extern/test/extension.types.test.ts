@@ -10,7 +10,6 @@ import type {
   Session,
 } from "../src/Extension";
 import type { Testing } from "../src/testing";
-import type { Cleanup } from "../src/Cleanup";
 import type { Identity } from "../src/Types";
 import {
   boxed,
@@ -475,13 +474,17 @@ describe("the `Extension` union", () => {
       name: "p",
       unmocked: "produce",
       supports: () => true,
-      scope: (block) => block({ produce: p }),
+      *frame() {
+        yield { produce: p };
+      },
     };
 
     const observer: Extension = {
       kind: "observer",
       name: "o",
-      scope: (block) => block({}),
+      *frame() {
+        yield {};
+      },
     };
 
     expect([producer.kind, observer.kind]).toEqual(["producer", "observer"]);
@@ -497,7 +500,9 @@ describe("the `Extension` union", () => {
     const lambdaWithoutSupports: Extension<BoxedLambda> = {
       kind: "producer",
       name: "x",
-      scope: (block) => block({ produce: p }),
+      *frame() {
+        yield { produce: p };
+      },
     };
 
     const unmockedWithoutSupports: Extension = {
@@ -505,15 +510,27 @@ describe("the `Extension` union", () => {
       name: "x",
       // @ts-expect-error — `unmocked` is meaningless without claiming.
       unmocked: "error",
-      scope: (block) => block({}),
+      *frame() {
+        yield {};
+      },
     };
 
     const claimsButServesNothing: Extension<BoxedLambda> = {
       kind: "producer",
       name: "x",
       supports: () => true,
-      // @ts-expect-error — a producer's session must carry `produce`.
-      scope: (block) => block({}),
+      /**
+       * On the method, not on the `yield` that is actually wrong. TypeScript
+       * checks a generator by assignability of its whole return type, so this
+       * reports as `Generator<{}, …>` not assignable to
+       * `Frame<Session.Producer>` — at the member, naming neither `produce` nor
+       * the offending line. The requirement still holds; only the diagnostic is
+       * indirect, which is why the directive sits here.
+       */
+      // @ts-expect-error — a producer's frame must yield a session with `produce`.
+      *frame() {
+        yield {};
+      },
     };
 
     const supportsWithoutLambda: Extension = {
@@ -521,7 +538,9 @@ describe("the `Extension` union", () => {
       name: "x",
       // @ts-expect-error — an observer claims nothing.
       supports: () => true,
-      scope: (block) => block({}),
+      *frame() {
+        yield {};
+      },
     };
 
     expect([
@@ -556,13 +575,17 @@ describe("the `Extension` union", () => {
         {
           kind: "observer",
           name: "inline",
-          scope: (block) => block({}),
+          *frame() {
+            yield {};
+          },
         } satisfies Extension,
         {
           kind: "producer",
           name: "inline-producer",
           supports: (identity) => typeof identity === "object",
-          scope: (block) => block({ produce: p }),
+          *frame() {
+            yield { produce: p };
+          },
         } satisfies Extension<BoxedLambda>,
       ],
     });
@@ -583,18 +606,16 @@ describe("the `Extension` union", () => {
 
   /**
    * A producer must serve what it claims, so `produce` is required on its
-   * session. Everything else on `Session` stays optional, which is why this is
-   * an intersection rather than `Required<Session>` — the latter would make
-   * every optional member mandatory for producers, `cleanup` today and whatever
-   * is added next.
+   * session, and optional on the erased `Session` the core holds. The
+   * intersection rather than `Required<Session>` is what keeps that true for
+   * whatever optional member is added to `Session` next.
    */
   it("requires `produce` on a producer's session, and nothing else", () => {
     assertType<Equals<Session.Producer["produce"], Produce>>();
-    assertType<Equals<Session.Producer["cleanup"], Cleanup | undefined>>();
     assertType<Equals<Session["produce"], Produce | undefined>>();
 
     const producing: Session.Producer = { produce: () => 1 };
-    expect(producing.cleanup).toBeUndefined();
+    expect(producing.produce).toBeTypeOf("function");
   });
 });
 

@@ -1,6 +1,10 @@
 import { initialize as initializeExtern } from "@ghostry/extern";
 import { initialize as initializeFabricator } from "@ghostry/fabricator";
-import { integration, type Identity } from "@ghostry/fabricator/harnessing";
+import { integration } from "@ghostry/fabricator/harnessing";
+import {
+  initialize as initializeHarness,
+  type Framework,
+} from "@ghostry/harness";
 import { describe, expect, it } from "bun:test";
 import { fabricatorExtension } from "../src";
 
@@ -9,10 +13,12 @@ import { fabricatorExtension } from "../src";
  * `@ghostry/fabricator/harnessing` opens per test — the arrangement a user gets
  * from combining extern, fabricator, and `@ghostry/harness`.
  *
- * The harness package itself is not a dependency here, and does not need to be:
- * `integration(instance)` is satisfied structurally, and driving its `around`
- * directly is exactly what a harness does with it. Standing it up by hand also
- * keeps this file honest about which package owns which half of the behavior.
+ * Driven through the **real** `@ghostry/harness` rather than a stand-in for it.
+ * The cost, stated plainly: a failure here can now originate in three packages
+ * rather than two. What is asserted is still extern's and fabricator's doing —
+ * salt inheritance, ordinal disjointness, frame restoration — so a harness bug
+ * is unlikely to counterfeit one of these convincingly, but it is no longer
+ * impossible.
  */
 
 const fabricator = initializeFabricator({ salt: "harnessing-suite" });
@@ -31,21 +37,58 @@ const block = (): Id =>
     throw new Error("unreachable");
   });
 
-const harness = integration(fabricator);
+/**
+ * Every body harness composed, in registration order. A runner would run these;
+ * {@link asTest} invokes one directly so its return value stays inspectable,
+ * which is what lets the synchronous case below assert that nothing in the
+ * chain promoted it to a promise.
+ */
+const registered: Array<{ readonly name: string; readonly fn: () => unknown }> =
+  [];
 
-/** One test's worth of `around`, named the way a harness would name it. */
+/**
+ * The slice of a test framework harness wraps. A recording stand-in satisfies
+ * it structurally, exactly as `bun:test` and vitest do.
+ */
+const framework = {
+  describe: (_name: string, fn: () => unknown) => fn(),
+  it: (name: string, fn: () => unknown) => void registered.push({ name, fn }),
+  test: (name: string, fn: () => unknown) => void registered.push({ name, fn }),
+  expect,
+  beforeAll: () => {},
+  afterAll: () => {},
+} satisfies Framework;
+
+const harnessed = initializeHarness({
+  framework,
+  integrations: [integration(fabricator)],
+});
+
+/**
+ * What the integration contributes, read off the instance rather than restated:
+ * `provides.fabricator` hands back the scope its own wrapper established.
+ */
+type Context = { readonly fabricator: typeof fabricator };
+
+/**
+ * Register one test with harness and run it, handing back whatever its body
+ * returned. The identity harness derives — and therefore the per-test salt —
+ * comes from the name, so distinct names here are what make the tests below
+ * distinct.
+ */
 const asTest = <$Return>(
   name: string,
-  body: (identity: Identity) => $Return,
+  body: (context: Context) => $Return,
 ): $Return => {
-  const identity: Identity = {
-    kind: "test",
-    path: ["harnessing"],
-    name,
-    row: undefined,
-  };
+  const before = registered.length;
 
-  return harness.around(identity, () => body(identity));
+  harnessed.it(name, body);
+
+  const added = registered[before];
+  if (added === undefined)
+    throw new Error(`\`it(${name})\` registered nothing`);
+
+  return added.fn() as $Return;
 };
 
 function isThenable(value: unknown): value is PromiseLike<unknown> {
@@ -53,8 +96,8 @@ function isThenable(value: unknown): value is PromiseLike<unknown> {
   return typeof (value as PromiseLike<unknown>).then === "function";
 }
 
-describe("under a harness `around`", () => {
-  it("returns a non-thenable for a sync body under `around`", () => {
+describe("under a harness frame", () => {
+  it("returns a non-thenable for a sync body", () => {
     let value: Id | undefined;
 
     const result = asTest("sync", () =>
@@ -136,8 +179,8 @@ describe("under a harness `around`", () => {
    * be equal. Their *inequality* is what pins the sharing down.
    */
   it("keeps the provided scope in step with the block's own source", async () => {
-    await asTest("provided", async (identity) => {
-      const provided = harness.provides.fabricator(identity);
+    await asTest("provided", async (context) => {
+      const provided = context.fabricator;
 
       await extern.testing(() => {
         const viaProvided = new provided.Fabricator(schema).fabricate();
