@@ -27,11 +27,19 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/esm/index.js",
       "default": "./dist/esm/index.js"
+    },
+    "./harnessing": {
+      "types": "./dist/types/harnessing.d.ts",
+      "import": "./dist/esm/harnessing.js",
+      "default": "./dist/esm/harnessing.js"
     }
   },
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "devDependencies": {
+    "@ghostry/harness": "^0.0.4"
   },
   "scripts": {
     "build:reset": "rm -rf ./dist",

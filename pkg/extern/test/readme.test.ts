@@ -1,6 +1,11 @@
+import {
+  initialize as initializeHarness,
+  type Framework as HarnessFramework,
+} from "@ghostry/harness";
 import { describe, expect, it } from "bun:test";
-import { initialize } from "../src";
+import { initialize, MockingUnavailableError } from "../src";
 import type { Extension, HandleLambda, TypeLambda } from "../src/Extension";
+import { integration } from "../src/harnessing";
 
 /**
  * The README's `## Extensions` snippets, executed as written.
@@ -214,5 +219,168 @@ describe("the README's `## Extensions` snippets", () => {
     await extern.testing(() => {
       expect(extern.typed.by(user).will(() => "original")).toBe("user:");
     });
+  });
+});
+
+/**
+ * The README's `## Harnessing` snippets, executed as written.
+ *
+ * The `source.ts` the section imports from is the README's own earlier example,
+ * reproduced here as {@link identity}/{@link example}; the framework a real
+ * setup hands `initializeHarness` is a recording stand-in, so a registered body
+ * can be invoked directly and its return value inspected. Everything the
+ * section shows of extern's own surface is otherwise reproduced verbatim, so a
+ * snippet that stops being true stops compiling or stops passing.
+ */
+describe("the README's `## Harnessing` snippets", () => {
+  const registered: Array<{
+    readonly name: string;
+    readonly fn: () => unknown;
+  }> = [];
+  const suiteHooks: Array<() => unknown> = [];
+
+  const bunTest = {
+    describe: (_name: string, fn: () => unknown) => fn(),
+    it: (name: string, fn: () => unknown) => void registered.push({ name, fn }),
+    test: (name: string, fn: () => unknown) =>
+      void registered.push({ name, fn }),
+    expect,
+    beforeAll: (fn: () => unknown) => void suiteHooks.push(fn),
+    afterAll: (fn: () => unknown) => void suiteHooks.push(fn),
+  } satisfies HarnessFramework;
+
+  const runAll = (): void => {
+    for (const entry of registered.splice(0)) entry.fn();
+  };
+
+  const wire = async () => {
+    /** `extern.ts`, from the README's opening example. */
+    const extern = await initialize({});
+
+    /** `source.ts`, from the same. */
+    const identity = extern.T<string>();
+    const example = () =>
+      extern.typed.by(identity).will(() => "quick" + " brown") + " fox";
+
+    /** `harness.ts`, verbatim but for the instance it closes over. */
+    const { describe, it, expect, beforeAll, beforeEach, framework } =
+      initializeHarness({
+        framework: bunTest,
+        integrations: [integration(extern)],
+      });
+
+    return {
+      extern,
+      identity,
+      example,
+      describe,
+      it,
+      expect,
+      beforeAll,
+      beforeEach,
+      framework,
+    };
+  };
+
+  it("substitutes the external interaction, with no `testing` and no `await`", async () => {
+    const { identity, example, it, expect: harnessExpect } = await wire();
+
+    it("substitutes the external interaction", ({ extern: { mock } }) => {
+      const spy = mock(identity).with("a");
+
+      harnessExpect(example()).toEqual("a fox");
+      harnessExpect(spy.executions).toHaveLength(1);
+    });
+
+    const registration = registered[registered.length - 1];
+    const returned = registration?.fn();
+
+    /** "a synchronous test stays synchronous". */
+    expect(returned).toBeUndefined();
+
+    registered.length = 0;
+  });
+
+  it("runs the original function under `passthrough()`", async () => {
+    const { identity, example, it } = await wire();
+
+    let value: string | undefined;
+
+    it("wants the real thing", ({ extern: { mock } }) => {
+      mock(identity).passthrough();
+      value = example();
+    });
+
+    runAll();
+
+    expect(value).toEqual("quick brown fox");
+  });
+
+  it("leaves a body registered through `framework` unframed", async () => {
+    const { example, framework } = await wire();
+
+    let value: string | undefined;
+
+    framework.it("is not framed at all", () => {
+      value = example();
+    });
+
+    runAll();
+
+    expect(value).toEqual("quick brown fox");
+  });
+
+  it("refuses the mocker in `beforeAll`, and takes an explicit block instead", async () => {
+    const { extern, identity, example, beforeAll } = await wire();
+
+    let refused: unknown;
+    let seeded: string | undefined;
+
+    beforeAll(({ extern: { mock } }) => {
+      try {
+        mock(identity).with("a");
+      } catch (error) {
+        refused = error;
+      }
+    });
+
+    beforeAll(async () => {
+      await extern.testing((mock) => {
+        mock(identity).with("a");
+        seeded = example();
+      });
+    });
+
+    for (const hook of suiteHooks.splice(0)) await hook();
+
+    expect(refused).toBeInstanceOf(MockingUnavailableError);
+    expect(seeded).toEqual("a fox");
+  });
+
+  it('keeps a `beforeEach` mock live for the body, and `{ unused: "allow" }` tolerant', async () => {
+    const {
+      identity,
+      example,
+      it,
+      describe: harnessDescribe,
+      beforeEach,
+    } = await wire();
+
+    let value: string | undefined;
+
+    harnessDescribe("the suite", () => {
+      beforeEach(({ extern: { mock } }) => {
+        mock(identity).with("a", { unused: "allow" });
+      });
+
+      it("uses the shared mock", () => {
+        value = example();
+      });
+
+      it("does not", () => {});
+    });
+
+    expect(runAll).not.toThrow();
+    expect(value).toEqual("a fox");
   });
 });

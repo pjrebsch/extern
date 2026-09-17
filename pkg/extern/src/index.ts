@@ -43,6 +43,7 @@ export {
   IllegalConcurrencyTestingError,
   InvalidDataTypeError,
   InvalidSchemaError,
+  MockingUnavailableError,
   NotMockedError,
   UnusedMocksError,
 } from "./Error.ts";

@@ -91,6 +91,27 @@ export class NotMockedError extends ExternError {
 }
 
 /**
+ * The error thrown when a mocker is reached outside any testing block.
+ *
+ * Reachable only through `@ghostry/extern/harnessing`, whose integration frames
+ * tests but not suite hooks: a mock defined in `beforeAll` could never reach a
+ * test, since every testing block mints its own spies. Refusing at the call is
+ * what keeps that from being a silent no-op.
+ */
+export class MockingUnavailableError extends ExternError {
+  constructor() {
+    super();
+    this.name = "MockingUnavailableError";
+    this.message =
+      "`context.extern.mock` is available inside a test only. `beforeAll` and "
+      + "`afterAll` run outside any `extern.testing` block, so a mock defined "
+      + "there could never reach a test. Define it in the test, or in "
+      + "`beforeEach`, which runs inside the block; to use extern within the "
+      + "hook itself, open a block explicitly with `extern.testing(...)`.";
+  }
+}
+
+/**
  * The error thrown when a block whose identity an extension claims would need
  * to produce a value, but no extension able to produce it is available.
  *

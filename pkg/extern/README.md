@@ -630,3 +630,150 @@ produce: (identity, named, using) => {
 An extension with no handle simply ignores `using`; leaving `Handle` undeclared
 withdraws the callback form from your identities while leaving `produce()`
 itself in place.
+
+## Harnessing
+
+[`@ghostry/harness`](https://github.com/ghostry-dev/harness) wraps a
+Jest-compatible test framework so that libraries can contribute to every test
+body. `@ghostry/extern/harnessing` supplies extern's integration: each test body
+**is** a testing block, and its mocker arrives on the test context.
+
+```ts
+// harness.ts
+import { integration as externIntegration } from "@ghostry/extern/harnessing";
+import { initialize as initializeHarness } from "@ghostry/harness";
+import * as bunTest from "bun:test";
+import { extern } from "./extern.ts";
+
+export const { describe, it, expect, beforeAll, beforeEach, framework } =
+  initializeHarness({
+    framework: bunTest,
+    integrations: [externIntegration(extern)],
+  });
+```
+
+```ts
+import { it, expect } from "./harness.ts";
+import { example, identity } from "./source.ts";
+
+it("substitutes the external interaction", ({ extern: { mock } }) => {
+  const spy = mock(identity).with("a");
+
+  expect(example()).toEqual("a fox");
+  expect(spy.executions).toHaveLength(1);
+});
+```
+
+No `extern.testing(...)` and no `await` around the body: the block is already
+open, and a synchronous test stays synchronous.
+
+### Every test is now a testing block
+
+Weigh this before adopting it. Outside a testing block an extern block runs its
+original function; inside one, an unmocked block raises `NotMockedError`. With
+the integration installed there is no longer an outside, so **every** test that
+reaches a wrapped interaction needs a mock for it — including tests nobody
+thinks of as extern tests, which are exactly the ones that will fail first.
+
+Two ways out, per block and per test:
+
+```ts
+it("wants the real thing", ({ extern: { mock } }) => {
+  mock(identity).passthrough();
+});
+```
+
+```ts
+import { framework } from "./harness.ts";
+
+/** The unchanged test module: bodies registered through it are never framed. */
+framework.it("is not framed at all", () => {});
+```
+
+The first keeps the block under extern's eye — it still records executions — and
+runs the original function. The second opts the whole test out.
+
+### Suite hooks are not framed, but test hooks are
+
+`beforeAll` and `afterAll` run outside any testing block, so blocks reached from
+them run their original functions, exactly as they would with no integration
+installed. Reaching for the mocker there raises `MockingUnavailableError` rather
+than quietly accomplishing nothing:
+
+```ts
+beforeAll(({ extern: { mock } }) => {
+  mock(identity).with("a"); // MockingUnavailableError
+});
+```
+
+That refusal is deliberate. A testing block mints its own spies, so a mock
+defined in `beforeAll` could never reach a test even if one were handed out. A
+hook that genuinely wants a block can open one itself:
+
+```ts
+beforeAll(async () => {
+  await extern.testing((mock) => {
+    mock(identity).with("a");
+    seed();
+  });
+});
+```
+
+`beforeEach` and `afterEach` are different: harness runs them **inside** the
+frame, around the body, so a mock defined in a `beforeEach` is live for the test
+and an `afterEach` can still read its spies.
+
+```ts
+describe("the suite", () => {
+  beforeEach(({ extern: { mock } }) => {
+    mock(identity).with("a", { unused: "allow" });
+  });
+});
+```
+
+A shared mock counts toward the unused-mock check of each test that does not
+reach it, which is what `{ unused: "allow" }` is for.
+
+Harness requires `beforeEach`/`afterEach` to be registered inside a `describe` —
+a top-level one raises `AmbientHookError`, since there is no suite to attach it
+to.
+
+### Composing with other integrations
+
+Integrations apply outside-in, index 0 outermost:
+
+```ts
+initializeHarness({
+  framework,
+  integrations: [fabricatorIntegration(fabricator), externIntegration(extern)],
+});
+```
+
+Extern's own extensions open their scopes inside `testing`, so the order of the
+integrations decides which scope encloses which: extern last layers the
+extension's scope over the other integration's per-test scope, and reversing
+them layers the per-test scope over the extension's. Both keep every layer, and
+both stay deterministic and per-test — the order changes only how the layers
+nest. They do not compose to the same configuration, though, so flipping the
+order moves every generated value in the suite. Pick one and stay with it; the
+examples here register extern last.
+
+To derive fabricator data during a test, fork `context.fabricator` (or
+`fabricator.context.scope()`), not `fabricator` itself — a fork of the
+integrated instance draws the same data in every test. The fabricator
+extension's README works that case through.
+
+### Under the `sync` scope
+
+`scope: "sync"` permits one testing block at a time. Since every test is now a
+block, that becomes a rule about tests: concurrent test bodies raise
+`IllegalConcurrencyTestingError`, and so does an explicit `extern.testing(...)`
+written inside a framed body. An existing suite that calls `extern.testing`
+itself will meet this immediately — under the default `async` scope that same
+nesting is permitted, but the inner block shadows rather than merges, so the
+enclosing test's mocks are invisible within it.
+
+### Requirements
+
+`initialize` is asynchronous and the instance is needed at registration time, so
+the wiring module needs top-level `await` — ESM only.
