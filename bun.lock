@@ -16,7 +16,7 @@
     },
     "pkg/extern": {
       "name": "@ghostry/extern",
-      "version": "0.0.13",
+      "version": "0.0.14",
       "devDependencies": {
         "@ghostry/harness": "^0.0.4",
       },
