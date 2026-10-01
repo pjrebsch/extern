@@ -26,11 +26,11 @@
       "version": "0.0.2",
       "devDependencies": {
         "@ghostry/extern": "workspace:*",
-        "@ghostry/fabricator": "^0.0.7",
+        "@ghostry/fabricator": "^0.0.10",
         "@ghostry/harness": "^0.0.4",
       },
       "peerDependencies": {
-        "@ghostry/extern": ">=0.0.13 <0.1.0",
+        "@ghostry/extern": ">=0.0.14 <0.1.0",
         "@ghostry/fabricator": ">=0.0.4 <0.1.0",
       },
     },
@@ -69,7 +69,7 @@
 
     "@ghostry/extern-extension-fabricator-v0": ["@ghostry/extern-extension-fabricator-v0@workspace:pkg/extern-extension-fabricator-v0"],
 
-    "@ghostry/fabricator": ["@ghostry/fabricator@0.0.7", "", {}, "sha512-TW5nGduN5e79b+fmr2moXTA+ojVLc07SyYMAMfDKqwEDYSpTCh8G46Qj/j7H8lc7cO8zVMimVWGoLwIG4+n0PA=="],
+    "@ghostry/fabricator": ["@ghostry/fabricator@0.0.10", "", {}, "sha512-t9Grn3J3xlAud4Z9K04Mx1N22N+/Bz6qbvHqhs618f22vf8RAb/mtLMRe2aEmpMyUdqiYtER4mdgP0/x4HsqrQ=="],
 
     "@ghostry/harness": ["@ghostry/harness@0.0.4", "", {}, "sha512-aUg9QxV+d4x20ddYifBkzbwebWit6M5d3N17mooF0tm3xpGIdIUtuvEmRdon7zGUIcJYrFCJYBrV0GzNB8y3Mw=="],
 
