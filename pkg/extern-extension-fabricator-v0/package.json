@@ -48,11 +48,11 @@
   ],
   "peerDependencies": {
     "@ghostry/extern": ">=0.0.14 <0.1.0",
-    "@ghostry/fabricator": ">=0.0.4 <0.1.0"
+    "@ghostry/fabricator": ">=0.0.11 <0.1.0"
   },
   "devDependencies": {
     "@ghostry/extern": "workspace:*",
-    "@ghostry/fabricator": "^0.0.10",
+    "@ghostry/fabricator": "^0.0.11",
     "@ghostry/harness": "^0.0.4"
   }
 }

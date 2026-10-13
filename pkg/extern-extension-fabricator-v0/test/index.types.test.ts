@@ -68,6 +68,219 @@ describe("a fabricator schema as an identity", () => {
   });
 });
 
+/**
+ * A schema's own `undefined` and `null` have to survive the inference. The
+ * value type is read off an optional brand, and this suite compiles without
+ * `exactOptionalPropertyTypes` — the setting under which an optional property
+ * reads as `X | undefined` and a bare `[Produces]?: $T` cannot tell the
+ * schema's `undefined` from the modifier's. `Schema<$T>` matching through
+ * fabricator's `Produced<$T>` is what every assertion here rests on.
+ */
+describe("a schema whose value may be `undefined` or `null`", () => {
+  const text = T.string.whereby({ length: { max: 4 } });
+  const row = T.object({ id: text });
+
+  type Row = { id: string };
+
+  const nothing = T.undefined;
+  const undefinable = T.undefinable(text);
+  const nullable = T.nullable(text);
+  const nullish = T.nullish(text);
+
+  it("keeps it for each wrapper kind", () => {
+    const fromNothing = extern.typed.by(nothing).will(() => undefined);
+    const fromUndefinable = extern.typed.by(undefinable).will(() => undefined);
+    const fromNullable = extern.typed.by(nullable).will(() => null);
+    const fromNullish = extern.typed.by(nullish).will(() => null);
+
+    assertType<Equals<typeof fromNothing, undefined>>();
+    assertType<Equals<typeof fromUndefinable, string | undefined>>();
+    assertType<Equals<typeof fromNullable, string | null>>();
+    assertType<Equals<typeof fromNullish, string | null | undefined>>();
+
+    expect(fromNullable).toBeNull();
+  });
+
+  it("accepts a block that returns `undefined` for an undefinable schema", async () => {
+    const lookup = async (): Promise<Row | undefined> => undefined;
+
+    const value = await extern.typed
+      .by(T.undefinable(row))
+      .will(() => lookup());
+
+    assertType<Equals<typeof value, Row | undefined>>();
+
+    expect(value).toBeUndefined();
+  });
+
+  it("still rejects one for a schema that never produces it", () => {
+    // @ts-expect-error — `row` never produces `undefined`.
+    extern.typed.by(row).will((): Row | undefined => undefined);
+
+    expect(true).toBe(true);
+  });
+
+  it("keeps it nested in an object", () => {
+    const schema = T.object({
+      nothing,
+      undefinable,
+      nullable,
+      nullish,
+      optional: T.optional(text),
+    });
+
+    const value = extern.typed
+      .by(schema)
+      .will(() => ({
+        nothing: undefined,
+        undefinable: undefined,
+        nullable: null,
+        nullish: null,
+      }));
+
+    /**
+     * `undefinable` stays a required key whose value may be `undefined`;
+     * only `optional` is a key that may be absent.
+     */
+    assertType<
+      Equals<
+        typeof value,
+        {
+          nothing: undefined;
+          undefinable: string | undefined;
+          nullable: string | null;
+          nullish: string | null | undefined;
+          optional?: string | undefined;
+        }
+      >
+    >();
+
+    expect(value.nullable).toBeNull();
+  });
+
+  it("keeps it nested in an array", () => {
+    const length = { length: { max: 2 } };
+
+    const ofNothing = extern.typed
+      .by(T.array(nothing).whereby(length))
+      .will(() => []);
+    const ofUndefinable = extern.typed
+      .by(T.array(undefinable).whereby(length))
+      .will(() => []);
+    const ofNullable = extern.typed
+      .by(T.array(nullable).whereby(length))
+      .will(() => []);
+    const ofNullish = extern.typed
+      .by(T.array(nullish).whereby(length))
+      .will(() => []);
+
+    assertType<Equals<typeof ofNothing, undefined[]>>();
+    assertType<Equals<typeof ofUndefinable, (string | undefined)[]>>();
+    assertType<Equals<typeof ofNullable, (string | null)[]>>();
+    assertType<Equals<typeof ofNullish, (string | null | undefined)[]>>();
+
+    expect(ofNullish).toEqual([]);
+  });
+
+  it("keeps it nested in a tuple", () => {
+    const schema = T.tuple([nothing, undefinable, nullable, nullish]);
+
+    const value = extern.typed
+      .by(schema)
+      .will((): [undefined, undefined, null, null] => [
+        undefined,
+        undefined,
+        null,
+        null,
+      ]);
+
+    assertType<
+      Equals<
+        typeof value,
+        [
+          undefined,
+          string | undefined,
+          string | null,
+          string | null | undefined,
+        ]
+      >
+    >();
+
+    expect(value).toHaveLength(4);
+  });
+
+  it("keeps it nested in a record", () => {
+    const size = { size: { max: 2 } };
+
+    const ofNothing = extern.typed
+      .by(T.record(text, nothing).whereby(size))
+      .will(() => ({}));
+    const ofUndefinable = extern.typed
+      .by(T.record(text, undefinable).whereby(size))
+      .will(() => ({}));
+    const ofNullable = extern.typed
+      .by(T.record(text, nullable).whereby(size))
+      .will(() => ({}));
+    const ofNullish = extern.typed
+      .by(T.record(text, nullish).whereby(size))
+      .will(() => ({}));
+
+    assertType<Equals<typeof ofNothing, Record<string, undefined>>>();
+    assertType<
+      Equals<typeof ofUndefinable, Record<string, string | undefined>>
+    >();
+    assertType<Equals<typeof ofNullable, Record<string, string | null>>>();
+    assertType<
+      Equals<typeof ofNullish, Record<string, string | null | undefined>>
+    >();
+
+    expect(ofNullish).toEqual({});
+  });
+
+  it("keeps it beside `self` in a recursive schema", () => {
+    const tree = T.recursive((self) =>
+      T.object({
+        value: T.undefinable(T.number),
+        parent: T.undefinable(self),
+        next: T.nullish(self),
+        previous: T.nullable(self),
+        children: T.array(self).whereby({ length: { max: 2 } }),
+      }),
+    ).whereby({ depth: { max: 2 } });
+
+    const value = extern.typed
+      .by(tree)
+      .will(() => ({
+        value: undefined,
+        parent: undefined,
+        next: null,
+        previous: null,
+        children: [],
+      }));
+
+    type Tree = typeof value;
+
+    assertType<Equals<Equals<Tree, unknown>, false>>();
+    assertType<Equals<Tree["value"], number | undefined>>();
+    assertType<Equals<Tree["parent"], Tree | undefined>>();
+    assertType<Equals<Tree["next"], Tree | null | undefined>>();
+    assertType<Equals<Tree["previous"], Tree | null>>();
+    assertType<Equals<Tree["children"], Tree[]>>();
+
+    expect(value.children).toEqual([]);
+  });
+
+  it("keeps it when the identity is already a built Fabricator", () => {
+    const built = new fabricator.Fabricator(T.undefinable(row));
+
+    const value = extern.typed.by(built).will(() => undefined);
+
+    assertType<Equals<typeof value, Row | undefined>>();
+
+    expect(value).toBeUndefined();
+  });
+});
+
 describe("the `produce()` gate", () => {
   it("offers the callback form for an object schema", async () => {
     await extern.testing((mock) => {

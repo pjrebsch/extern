@@ -4,6 +4,7 @@ import type {
   Kind,
   Meta,
   NaiveFabricator,
+  Produced,
   Produces,
 } from "@ghostry/fabricator/internal";
 
@@ -15,11 +16,20 @@ import type {
  * object with a same-named method and silently claim identities that were
  * never fabricator's. So this satisfies the structural-narrowness rule
  * that extern's contract documents for lambda authors.
+ *
+ * `$T` is inferred through fabricator's own box, `Produced<$T>`, which is
+ * what `[Produces]` holds. The brand is an optional property, and a caller
+ * compiling without `exactOptionalPropertyTypes` reads one as `X |
+ * undefined`. Matched as a bare `[Produces]?: $T`, a schema's own
+ * `undefined` is absorbed into that optional slot: an identity of
+ * `T.undefinable(row)` infers `Row`, and a block returning `undefined` is
+ * rejected. Inside the box it is out of the modifier's reach, so the
+ * inference is the same under either setting.
  */
 export type Schema<$T> = {
   readonly [Kind]: unknown;
   readonly [Meta]: unknown;
-  readonly [Produces]?: $T;
+  readonly [Produces]?: Produced<$T>;
 };
 
 /** A built Fabricator producing `$T` — equally usable as a block identity. */
